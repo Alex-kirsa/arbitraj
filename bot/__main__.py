@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 
+from aiocryptopay import AioCryptoPay, Networks
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.redis import DefaultKeyBuilder, RedisEventIsolation, RedisStorage
@@ -16,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from bot.db.base import metadata
 from bot.dialogs import dialogs_includer
 from bot.handlers import include_handlers
+from bot.handlers.other_handlers import handle_cryptopay_updates, handle_create_offer
 # from bot.db.requests import channel_requests
 from bot.middlewares.i18n_dialog import RedisI18nMiddleware
 from bot.utils.set_bot_commands import set_default_commands
@@ -28,11 +30,10 @@ from .utils.redis.redis import redis
 
 
 async def on_startup(dispatcher: Dispatcher, bot: Bot):
-    # await bot.set_webhook(
-    #     f"{config.webhook_base_url}{config.webhook_path}",
-    #     secret_token=config.webhook_secret,
-    # )
-    ...
+    await bot.set_webhook(
+        f"{config.webhook_base_url}{config.webhook_path}",
+        secret_token=config.webhook_secret,
+    )
 
 
 @logger.catch
@@ -51,6 +52,7 @@ async def main():
     dp = Dispatcher(storage=storage, events_isolation=event_isolation)
     dp.startup.register(on_startup)
     dp["dp"] = dp
+    dp["session_pool"] = db_pool
 
     path_to_locales = os.path.join("bot", "locales", "{locale}", "LC_MESSAGES")
     i18n_middleware = RedisI18nMiddleware(
@@ -77,20 +79,26 @@ async def main():
     dp.include_router(router)
     i18n_middleware.setup(dispatcher=dp)
 
-    await bot.delete_webhook(drop_pending_updates=True)
+    # await bot.delete_webhook(drop_pending_updates=True)
     await set_default_commands(bot)
 
     # Имплементируем планировщик задач
     # redis_pool = await create_pool(RedisConfig.pool_settings)
     # dp["arqredis"] = redis_pool
-    dp["session_pool"] = db_pool
-
+    # crypto_bot_client = AioCryptoPay(token=config.crypto_api_key, network=Networks.TEST_NET)
+    # dp["crypto_bot_client"] = crypto_bot_client
     app = web.Application(logger=logger)
+    # app['crypto_bot_client'] = crypto_bot_client
+    app['bot'] = Bot
+    app['db_factory'] = db_pool
+    app['bg_manager'] = dialogs_factory
     SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
         secret_token=config.webhook_secret,
     ).register(app, path=config.webhook_path)
+    # app.router.add_post(config.crypto_bot_webhook_path, handle_cryptopay_updates)
+    # app.router.add_post(..., handle_create_offer)
 
     setup_application(app, dp, bot=bot)
     # Start bot
@@ -102,9 +110,9 @@ async def main():
 
     await site.start()
 
-    await dp.start_polling(bot)
-    # logger.info("Bot started!")
-    # await asyncio.Event().wait()
+    # await dp.start_polling(bot)
+    logger.info("Bot started!")
+    await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
