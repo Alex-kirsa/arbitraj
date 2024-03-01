@@ -10,6 +10,7 @@ class SelectWebMasterOffer(StatesGroup):
     select_traffic_source = State()
     select_webmaster_offer = State()
     show_offer_info = State()
+    took_offer_action = State()
 
 
 class PersonalCabinet(StatesGroup):
@@ -18,3 +19,14 @@ class PersonalCabinet(StatesGroup):
 
 class WithdrawFunds(StatesGroup):
     show_withdraw_menu = State()
+    save_withdraw_data = State()
+
+
+class ReferalSystem(StatesGroup):
+    show_referal_menu = State()
+
+
+class MyOffers(StatesGroup):
+    select_target_source = State()
+    select_offer = State()
+    show_offer_info = State()

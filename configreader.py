@@ -17,6 +17,16 @@ class Config(BaseSettings):
     # I18N
     i18n_format_key: str
 
+    # CryptoBot
+    crypto_api_key: str
+    crypto_bot_webhook_path: str
+
+    # WebApp path
+    create_offer: str
+    add_channel: str
+    withdraw_request: str
+    payment_confirm: str
+
     # Devs
     devs: list
 

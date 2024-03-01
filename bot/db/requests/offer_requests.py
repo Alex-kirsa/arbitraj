@@ -9,9 +9,9 @@ class OfferRequestsRepo:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def add_offer(self, *kwargs):
+    async def add_offer(self, kwargs):
         query = Offers(
-            *kwargs
+            **kwargs
         )
         self.session.add(query)
         await self.session.commit()
@@ -43,6 +43,7 @@ class OfferRequestsRepo:
             query = select(Offers).where(
                 Offers.user_id == user_id
             )
+
         # elif offer_type:
         #     query = select(Offers).where(
         #         Offers.offer_type == offer_type

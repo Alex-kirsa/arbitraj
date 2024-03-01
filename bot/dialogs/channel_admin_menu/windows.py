@@ -1,15 +1,16 @@
 from aiogram_dialog import Window, StartMode
-from aiogram_dialog.widgets.kbd import Cancel, Back, SwitchTo, Start, Button
-from aiogram_dialog.widgets.text import Multi, Const
+from aiogram_dialog.widgets.input import TextInput
+from aiogram_dialog.widgets.kbd import Cancel, Back, SwitchTo, Start, Button, Group, WebApp, Url
+from aiogram_dialog.widgets.text import Multi, Const, Format, Case
 from magic_filter import F
 
 from bot.dialogs.start_menu.states import FirstStartWindow
 from bot.utils.i18n_utils.i18n_format import I18NFormat
 from . import keyboards, states, getters, selected
-from ..channel_owner_menu.getters import get_channel_topics, get_selected_topic
-from ..channel_owner_menu.keyboards import channel_topics_kb, get_channels_kb, select_payment_method
-from ..web_master_menu.getters import get_select_offer_data
-from ..web_master_menu.keyboards import select_offer, select_category, select_traffic_source
+from ..channel_owner_menu.getters import get_channel_themes
+from ..channel_owner_menu.keyboards import channel_theme_kb, get_channels_kb
+from ..web_master_menu.keyboards import select_offer, select_target_source, select_traffic_source
+from ...utils.constants import WebAppUrls, OfferStatus
 
 
 def main_menu_window():
@@ -25,31 +26,36 @@ def main_menu_window():
 def personal_cabinet_window():
     return Window(
         I18NFormat('T_personal_cabinet_admin_channel'),
-        SwitchTo(I18NFormat('I_active_orders'), 'I_active_orders',
-                 state=states.ChannelAdminPersonalCabinet.select_offer),
+        keyboards.offers_statuses(selected.on_select_offer_status),
         Cancel(I18NFormat('I_back')),
-        state=states.ChannelAdminPersonalCabinet.select_action,
+        state=states.ChannelAdminPersonalCabinet.select_offer_status,
+        getter=getters.get_personal_cabinet_data,
     )
 
 
-def select_active_order_window():
+def select_offer_window():
     return Window(
-        I18NFormat('I_all_active_offers'),
+        Case(
+            {
+                OfferStatus.ACTIVE: I18NFormat('I_all_active_offers'),
+                OfferStatus.COMPLETED: I18NFormat('I_all_completed_offers'),
+            },
+            selector='offer_status'
+        ),
         select_offer(selected.on_select_offer),
-        Back(I18NFormat('I_back')),
-        state=states.ChannelAdminPersonalCabinet.select_offer,
-        getter=getters.get_active_orders,
+        Cancel(I18NFormat('I_back')),
+        state=states.AdminOffers.select_offer,
+        getter=getters.get_admin_offers,
     )
 
 
 def show_offer_info_window():
     return Window(
-        Multi(
-            I18NFormat('T_offer_info', when=F['selected_category'].in_(['tg_channel_requests'])),
-            I18NFormat('T_offer_info_gambling', when=F['selected_category'].in_(['gambling'])),
-        ),
-        Back(I18NFormat('I_back')),
-        state=states.ChannelAdminPersonalCabinet.show_offer_info,
+        I18NFormat('T_offer_info'),
+        Cancel(I18NFormat('I_back'), when='first_window'),
+        Back(I18NFormat('I_back'), when=~F['first_window']),
+
+        state=states.AdminOffers.show_offer_info,
         getter=getters.get_offer_info,
     )
 
@@ -57,30 +63,30 @@ def show_offer_info_window():
 def select_topic_window():
     return Window(
         I18NFormat('T_select_channel_theme'),
-        channel_topics_kb(selected.on_select_channel_topic),
+        channel_theme_kb(selected.on_select_channel_theme),
         Cancel(I18NFormat('I_back')),
         state=states.ChannelPosterAdminMenu.select_topic,
-        getter=get_channel_topics,
+        getter=get_channel_themes,
     )
 
 
-def show_channels_window():
+def select_channels_window():
     return Window(
         I18NFormat('T_u_open_all_channels'),
-        get_channels_kb(),
+        keyboards.offers_kb(selected.on_select_offer),
         Back(I18NFormat('I_back')),
         state=states.ChannelPosterAdminMenu.select_channel,
-        getter=get_selected_topic,
+        getter=getters.get_offers_with_theme,
     )
 
 
 def create_offer_window():
     return Window(
         I18NFormat('I_select_target_for_traffic'),
-        select_category(selected.on_select_category),
+        select_target_source(selected.on_select_target_source),
         Cancel(I18NFormat('I_back')),
         state=states.CreateOffer.select_target_source,
-        getter=get_select_offer_data,
+        getter=getters.get_target_sources,
     )
 
 
@@ -89,68 +95,103 @@ def select_source_of_traffic():
         I18NFormat('T_select_source_of_traffic'),
         select_traffic_source(selected.on_select_traffic_source),
         Back(I18NFormat('I_back')),
-        state=states.CreateOffer.select_source,
+        state=states.CreateOffer.select_traffic_source,
         getter=getters.get_select_traffic_source_data,
 
     )
 
 
-def confirm_offer_window():
+def enter_offer_data_window():
     return Window(
-        Const("*Повідомлення сформоване з форми. Потрібно нажати підтвердити*"),
-        SwitchTo(I18NFormat('I_payment_confirm'), 'confirm',
-                 state=states.CreateOffer.select_payment_method),
-        Button(I18NFormat('I_edit'), 'I_edit'),
+        I18NFormat('T_enter_offer_data'),
+        Group(
+            WebApp(I18NFormat("I_enter_offer_data"), Const(WebAppUrls.CREATE_OFFER_WEB_APP.value)),
+        ),
         Back(I18NFormat('I_back')),
-        state=states.CreateOffer.confirm,
+        state=states.CreateOffer.enter_offer_data,
+        # getter=getters.get_entered_offer_data
     )
 
 
-def select_payment_method_window():
+def confirm_offer_window():
     return Window(
-        I18NFormat('T_payment_request'),
-        select_payment_method('channel_admin'),
-        Cancel(I18NFormat('I_back')),
-        state=states.CreateOffer.select_payment_method,
+        Multi(
+            I18NFormat("T_confirm_entered_data"),
+            Format("{offer_info}"),
+            sep='\n\n'
+        ),
+        SwitchTo(I18NFormat('I_payment_confirm'), 'confirm',
+                 state=states.CreateOffer.add_channel),
+        WebApp(I18NFormat('I_edit'), Const(WebAppUrls.CREATE_OFFER_WEB_APP.value)),
+        Back(I18NFormat('I_back')),
+        state=states.CreateOffer.confirm_offer_data,
+        getter=getters.get_entered_offer_data
+    )
+
+
+def add_channel_window():
+    return Window(
+        I18NFormat('T_add_channel'),
+        Url(I18NFormat('I_add_channel'), Format("{add_channel_url}")),
+        Back(I18NFormat('I_back')),
+        state=states.CreateOffer.add_channel,
+        getter=getters.get_add_channel_url
     )
 
 
 def select_topic_of_tg_traffic_channel_window():
     return Window(
         I18NFormat('T_select_channel_theme'),
-        channel_topics_kb(selected.on_select_topic_of_tg_traffic_channel),
+        channel_theme_kb(selected.on_select_topic_of_tg_traffic_channel),
         Cancel(I18NFormat('I_back')),
         state=states.CreateOfferFromTGTraffic.select_topic,
-        getter=get_channel_topics,
+        getter=get_channel_themes,
     )
 
 
 def select_criteria_for_sort_window():
     return Window(
         I18NFormat('T_select_filter_criteria'),
-        Button(I18NFormat('I_subscriber_count'), 'I_subscriber_count', on_click=selected.on_select_criteria_for_sort),
-        Button(I18NFormat('I_publication_reach'), 'I_publication_reach'),
-        Button(I18NFormat('I_min_post_price'), 'I_min_post_price'),
+        keyboards.criterias_kb(selected.on_select_criteria_for_sort),
         Back(I18NFormat('I_back')),
         state=states.CreateOfferFromTGTraffic.select_criteria_for_sort,
+        getter=getters.get_criteria_for_sort,
     )
 
 
 def select_channel_window():
     return Window(
         I18NFormat('T_u_open_all_channels'),
+        Button(
+            Multi(
+                I18NFormat('I_change_filter_from_max_to_min', when=F['sort_criteria'] == 'asc'),
+                I18NFormat('I_change_filter_from_min_to_max', when=F['sort_criteria'] == 'desc'),
+            ),
+            id='change_sort_criteria',
+            on_click=selected.on_change_sort_criteria
+        ),
         get_channels_kb(selected.on_select_channel),
         Back(I18NFormat('I_back')),
         state=states.CreateOfferFromTGTraffic.select_channel,
-        getter=get_selected_topic,
+        getter=getters.get_channels_with_criteria,
     )
 
 
 def show_channel_info_window():
     return Window(
         I18NFormat('T_channel_info'),
-        Button(I18NFormat('I_accept'), 'I_accept'),
-        SwitchTo(I18NFormat('I_back'), 'back_to_criteria', state=states.CreateOfferFromTGTraffic.select_criteria_for_sort),
+        Button(I18NFormat('I_accept'), 'I_accept', on_click=selected.on_accept_channel),
+        # SwitchTo(I18NFormat('I_back'), 'back_to_criteria', state=states.CreateOfferFromTGTraffic.select_criteria_for_sort),
+        Back(I18NFormat('I_back')),
         state=states.CreateOfferFromTGTraffic.show_channel_info,
         getter=getters.get_channel_info,
+    )
+
+
+def enter_comment_for_owner_window():
+    return Window(
+        I18NFormat("T_enter_comment_for_request"),
+        TextInput(id='enter_comment', on_success=selected.on_enter_comment),
+        Back(I18NFormat('I_back')),
+        state=states.CreateOfferFromTGTraffic.enter_comment
     )

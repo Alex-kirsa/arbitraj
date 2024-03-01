@@ -1,12 +1,12 @@
 import operator
 
-from aiogram_dialog.widgets.kbd import Group, Button, Select, ScrollingGroup
-from aiogram_dialog.widgets.text import Format
+from aiogram_dialog.widgets.kbd import Group, Button, Select, ScrollingGroup, Start
+from aiogram_dialog.widgets.text import Format, Case
 from magic_filter import F
 
-from bot.dialogs.web_master_menu import selected
-from bot.utils.constants import RoleTypes
+from bot.utils.constants import RoleTypes, OfferStatus
 from bot.utils.i18n_utils.i18n_format import I18NFormat
+from . import states, selected
 
 
 def select_action():
@@ -14,7 +14,6 @@ def select_action():
         Button(
             I18NFormat("I_select_offer"),
             id='I_select_web_master_offer',
-            # state=states.SelectWebMasterOffer.select_category
             on_click=selected.on_start_select_offer
         ),
         Group(
@@ -53,10 +52,11 @@ def personal_cabinet_menu():
             id='I_withdraw_funds',
             on_click=selected.on_select_withdraw_funds,
         ),
-        Button(
+        Start(
             I18NFormat('I_referral_system'),
             id='I_referral_system',
-            on_click=None,
+            state=states.ReferalSystem.show_referal_menu
+
         ),
         Button(
             I18NFormat('I_support'),
@@ -68,12 +68,12 @@ def personal_cabinet_menu():
     )
 
 
-def select_category(on_click):
+def select_target_source(on_click):
     return Group(
         Select(
             Format("{item[1]}"),
-            id='categories_kb',
-            items='categories_list',
+            id='target_source_kb',
+            items='sources_list',
             item_id_getter=operator.itemgetter(0),
             on_click=on_click
         ),
@@ -97,7 +97,13 @@ def select_traffic_source(on_click):
 def select_offer(on_click):
     return ScrollingGroup(
         Select(
-            Format("{item[1]}"),
+            Case(
+                {
+                    OfferStatus.ACTIVE: Format("{item[1]}"),
+                    OfferStatus.COMPLETED: Format("{item[1]} - {item[2]}"),
+                },
+                selector='offer_status'
+            ),
             id='offers_kb',
             items='offers_list',
             item_id_getter=operator.itemgetter(0),

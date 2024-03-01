@@ -7,7 +7,7 @@ from ..channel_admin_menu.states import ChannelAdminPersonalCabinet
 
 
 async def on_select_channel(call: CallbackQuery, widget: Select, manager: DialogManager, item_id: str):
-    manager.dialog_data.update(selected_channel=int(item_id))
+    manager.dialog_data.update(selected_channel_id=int(item_id))
     await manager.switch_to(states.UserChannels.channel_info)
 
 

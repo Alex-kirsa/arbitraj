@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 
+import aiohttp_cors
 from aiocryptopay import AioCryptoPay, Networks
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
@@ -17,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from bot.db.base import metadata
 from bot.dialogs import dialogs_includer
 from bot.handlers import include_handlers
-from bot.handlers.other_handlers import handle_cryptopay_updates, handle_create_offer
+from bot.handlers.other_handlers import handle_cryptopay_updates, handle_create_offer, handle_withdraw_request, handle_purchase_confirmation, handle_add_channel
 # from bot.db.requests import channel_requests
 from bot.middlewares.i18n_dialog import RedisI18nMiddleware
 from bot.utils.set_bot_commands import set_default_commands
@@ -85,11 +86,12 @@ async def main():
     # Имплементируем планировщик задач
     # redis_pool = await create_pool(RedisConfig.pool_settings)
     # dp["arqredis"] = redis_pool
-    # crypto_bot_client = AioCryptoPay(token=config.crypto_api_key, network=Networks.TEST_NET)
-    # dp["crypto_bot_client"] = crypto_bot_client
+    crypto_bot_client = AioCryptoPay(token=config.crypto_api_key, network=Networks.TEST_NET)
+    dp["crypto_bot_client"] = crypto_bot_client
     app = web.Application(logger=logger)
-    # app['crypto_bot_client'] = crypto_bot_client
-    app['bot'] = Bot
+    app['crypto_bot_client'] = crypto_bot_client
+    app['bot'] = bot
+    app['dp'] = dp
     app['db_factory'] = db_pool
     app['bg_manager'] = dialogs_factory
     SimpleRequestHandler(
@@ -97,9 +99,21 @@ async def main():
         bot=bot,
         secret_token=config.webhook_secret,
     ).register(app, path=config.webhook_path)
-    # app.router.add_post(config.crypto_bot_webhook_path, handle_cryptopay_updates)
-    # app.router.add_post(..., handle_create_offer)
+    app.router.add_post(config.crypto_bot_webhook_path, handle_cryptopay_updates)
+    app.router.add_post(config.create_offer, handle_create_offer)
+    app.router.add_post(config.withdraw_request, handle_withdraw_request)
+    app.router.add_post(config.payment_confirm, handle_purchase_confirmation)
+    app.router.add_post(config.add_channel, handle_add_channel)
+    cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*"
+        )
+    })
 
+    for route in list(app.router.routes()):
+        cors.add(route)
     setup_application(app, dp, bot=bot)
     # Start bot
     runner = web.AppRunner(app)

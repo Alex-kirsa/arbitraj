@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, FLOAT, TEXT
 from sqlalchemy.orm import mapped_column
 
 from bot.db.base import Base
-from bot.utils.constants import RoleTypes, TrafficSource, ChannelStatus, OfferStatus, WithdrawStatus, GamblingOfferStatus
+from bot.utils.constants import RoleTypes, TrafficSource, ChannelStatus, OfferStatus, WithdrawStatus, GamblingOfferStatus, TopUpStatus
 
 
 class Users(Base):
@@ -33,10 +33,10 @@ class Channels(Base):
     __tablename__ = "channels"
 
     id = mapped_column(BIGINT, primary_key=True)
-    channel_id = mapped_column(BIGINT, nullable=False, unique=True, doc='ID канала', name='ID канала')
     channel_title = mapped_column(VARCHAR(255), nullable=False, doc='Название канала', name='Название канала')
     channel_owner_id = mapped_column(BIGINT, ForeignKey(Users.user_id), nullable=False, doc='ID владельца канала', name='ID владельца канала')
     channel_theme = mapped_column(VARCHAR(255), nullable=False, doc='Тематика канала', name='Тематика канала')
+    custom_channel_theme = mapped_column(VARCHAR(255), nullable=True, doc='Кастомна Тематика канала', name='Кастомна Тематика канала')
     channel_invite_link = mapped_column(VARCHAR(255), nullable=False, doc='Ссылка на канал', name='Ссылка на канал')
     subs_amount = mapped_column(BIGINT, nullable=False, doc='Количество подписчиков', name='Количество подписчиков')
     male_percent = mapped_column(FLOAT, nullable=False, doc='Процент мужчин', name='Процент мужчин')
@@ -46,7 +46,7 @@ class Channels(Base):
     minimal_ad_price = mapped_column(FLOAT, nullable=False, doc='Минимальная цена рекламы', name='Минимальная цена рекламы')
     comment = mapped_column(TEXT, nullable=False, doc='Комментарий', name='Комментарий')
     contact = mapped_column(VARCHAR(255), nullable=False, doc='Контакт', name='Контакт')
-    status = mapped_column(Enum(ChannelStatus), nullable=False, default=ChannelStatus.WAIT_FOR_PAYMENT)
+    status = mapped_column(Enum(ChannelStatus), nullable=False, default=ChannelStatus.WAIT_ADMIN_CONFIRM)
 
 
 class Offers(Base):
@@ -60,14 +60,15 @@ class Offers(Base):
     channel_id = mapped_column(BIGINT, ForeignKey(ChannelsForTraffic.channel_id), nullable=False, doc='ID канала', name='ID канала')
     channel_name = mapped_column(VARCHAR(255), nullable=False, doc='Название канала', name='Название канала')
     channel_theme = mapped_column(VARCHAR(255), nullable=False, doc='Тематика канала', name='Тематика канала')
-    custom_channel_theme = mapped_column(VARCHAR(255), nullable=True, doc='Тематика канала', name='Тематика канала')
+    custom_channel_theme = mapped_column(VARCHAR(255), nullable=True, doc='Кастомна Тематика канала', name='Кастомна Тематика канала')
     target_request_amount = mapped_column(FLOAT, nullable=False, doc='Сумма запроса', name='Сумма запроса')
-    first_price_per_request = mapped_column(FLOAT, nullable=False, doc='Цена за запрос', name='Цена за запрос')
-    second_price_per_request = mapped_column(FLOAT, nullable=True, doc='Цена за запрос', name='Цена за запрос')
+    first_price_per_request = mapped_column(FLOAT, nullable=False, doc='Цена за запрос от админа канала', name='Цена за запрос от админа канала')
+    second_price_per_request = mapped_column(FLOAT, nullable=True, doc='Цена за запрос от админа бота', name='Цена за запрос от админа бота')
     money_reserved = mapped_column(FLOAT, nullable=False, doc='Зарезервированная сумма', name='Зарезервированная сумма')
     offer_deadline = mapped_column(VARCHAR(255), nullable=False, doc='Дедлайн оффера', name='Дедлайн оффера')
     traffic_rules = mapped_column(TEXT, nullable=False, doc='Правила трафика', name='Правила трафика')
     comment = mapped_column(TEXT, nullable=True, doc='Комментарий', name='Комментарий')
+    contacts = mapped_column(VARCHAR(255), nullable=False)
     status = mapped_column(Enum(OfferStatus), nullable=False, default=OfferStatus.WAIT_FOR_PAYMENT)
 
 
@@ -117,11 +118,12 @@ class TopUpRequests(Base):
 
     id = mapped_column(BIGINT, primary_key=True)
     user_id = mapped_column(BIGINT, ForeignKey(Users.user_id), nullable=False, doc='ID пользователя', name='ID пользователя')
-    payment_type = mapped_column(VARCHAR(255), nullable=False, doc='Тип пополнения', name='Тип пополнения')
-    fullname = mapped_column(VARCHAR(255), nullable=False, doc='ФИО', name='ФИО')
+    offer_id = mapped_column(BIGINT, ForeignKey(Offers.id), nullable=True, doc='ID оффера', name='ID оффера')
+    payment_method = mapped_column(VARCHAR(255), nullable=False, doc='Тип пополнения', name='Тип пополнения')
+    fullname = mapped_column(VARCHAR(255), nullable=True, doc='ФИО', name='ФИО')
     last_4_digits_credit_card = mapped_column(VARCHAR(4), nullable=True, doc='Последние 4 цифры карты', name='Последние 4 цифры карты')
     amount = mapped_column(FLOAT, nullable=False, doc='Сумма пополнения', name='Сумма пополнения')
-    status = mapped_column(VARCHAR(255), nullable=False, doc='Статус запроса', name='Статус запроса')
+    status = mapped_column(VARCHAR(255), nullable=False, doc='Статус запроса', name='Статус запроса', default=TopUpStatus.ACTIVE)
 
 
 class WithdrawRequests(Base):
@@ -131,5 +133,7 @@ class WithdrawRequests(Base):
     user_id = mapped_column(BIGINT, ForeignKey(Users.user_id), nullable=False, doc='ID пользователя', name='ID пользователя')
     payment_system = mapped_column(VARCHAR(255), nullable=False, doc='Тип выплаты', name='Тип выплаты')
     bank_name = mapped_column(VARCHAR(255), nullable=True, doc='Название банка', name='Название банка')
+    card_number = mapped_column(VARCHAR(255), nullable=True, doc='Номер карты', name='Номер карты')
+    crypto_adress = mapped_column(VARCHAR(255), nullable=True, doc='Криптовалютный адрес', name='Криптовалютный адрес')
     amount = mapped_column(FLOAT, nullable=False, doc='Сумма выплаты', name='Сумма выплаты')
-    status = mapped_column(Enum(WithdrawStatus), nullable=False, doc='Статус запроса', name='Статус запроса')
+    status = mapped_column(Enum(WithdrawStatus), nullable=False, doc='Статус запроса', name='Статус запроса', default=WithdrawStatus.ACTIVE)

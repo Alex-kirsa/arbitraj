@@ -1,18 +1,18 @@
 import operator
 
-from aiogram_dialog.widgets.kbd import Group, Start, Button, ScrollingGroup, Select
+from aiogram_dialog.widgets.kbd import Group, Start, Button, ScrollingGroup, Select, WebApp
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.utils.i18n_utils.i18n_format import I18NFormat
-from . import states
+from . import states, selected
+from ...utils.constants import WebAppUrls
 
 
 def select_action():
     return Group(
-        Start(
+        WebApp(
             I18NFormat("I_add_channel"),
-            id='I_add_channel',
-            state=states.AddChannel.enter_webapp_form,
+            Const(WebAppUrls.ADD_CHANNEL_WEB_APP.value)
         ),
         Start(
             I18NFormat("I_channel_poster"),
@@ -30,37 +30,15 @@ def select_action():
 
 def personal_cabinet_kb():
     return Group(
-        Start(
+        WebApp(
             I18NFormat("I_add_channel"),
-            id='I_add_channel',
-            state=states.AddChannel.enter_webapp_form,
+            Const(WebAppUrls.ADD_CHANNEL_WEB_APP.value)
         ),
         Start(
             I18NFormat("I_active_channels"),
             id='I_active_channels',
             state=states.UserChannels.select_channel,
         ),
-        Button(I18NFormat("I_withdraw_funds"), id='I_withdraw_funds')
-    )
-
-
-def select_payment_method(user_type: str):
-    return Group(
-        Button(
-            Const("CryptoPay"),
-            id='I_pay_via_cryptopay',
-        ),
-        Start(
-            I18NFormat("I_payment_card"),
-            id='I_payment_card',
-            state=states.PayViaCard.show_payment_info,
-            data={'user_type': user_type}
-        ),
-        Button(
-            I18NFormat("I_support"),
-            id='I_support',
-        ),
-        width=1
     )
 
 
@@ -80,7 +58,7 @@ def channels_kb(on_click):
     )
 
 
-def channel_topics_kb(on_click):
+def channel_theme_kb(on_click):
     return ScrollingGroup(
         Select(
             Format("{item[1]}"),

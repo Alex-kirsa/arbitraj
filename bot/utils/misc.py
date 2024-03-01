@@ -1,14 +1,6 @@
 import datetime
-from typing import Any
 
-from aiogram import Bot
-from aiogram.exceptions import TelegramForbiddenError, TelegramServerError, TelegramEntityTooLarge
-from aiogram.types import InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.utils.media_group import MediaGroupBuilder
-from aiogram_i18n.cores import FluentRuntimeCore, BaseCore
-
-
+from aiogram.utils.link import create_telegram_link
 
 
 async def check_enough_rights(bot_rights):
@@ -36,3 +28,10 @@ def convert_str_date_in_datetime(datetime_str: str, hour: int | str = None, minu
     return datetime_format
 
 
+def get_link_on_tg_user(user_id: int):
+    return create_telegram_link("user", user_id)
+
+
+def create_link_for_publish(default_tg_link: str):
+    custom_redirect_link = default_tg_link
+    return custom_redirect_link
