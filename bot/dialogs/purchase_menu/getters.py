@@ -45,7 +45,7 @@ async def get_price(dialog_manager: DialogManager, repo: Repo, event_from_user: 
         'price': price,
         'payment_methods': [(key, value) for key, value in PAYMENT_METHODS.items()],
         'role': user_model.role,
-        'pay_url': crypto_invoice.bot_invoice_url,
+        'pay_url': crypto_invoice.bot_invoice_url if crypto_invoice else False,
     }
 
 

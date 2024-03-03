@@ -11,7 +11,8 @@ def select_payment_method():
     return Group(
         Url(
             Const("CryptoBot"),
-            Format("{pay_url}")
+            Format("{pay_url}"),
+            when='pay_url'
         ),
         Select(
             Format("{item[1]}"),

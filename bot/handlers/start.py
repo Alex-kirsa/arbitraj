@@ -12,6 +12,7 @@ from bot.dialogs.start_menu.states import FirstStartWindow
 from bot.dialogs.web_master_menu.states import MainMenu as WebMasterMainMenu
 from bot.middlewares.throttling import ThrottlingMiddleware
 from bot.utils.constants import RoleTypes
+from configreader import config
 
 router = Router()
 router.message.middleware(ThrottlingMiddleware())
@@ -35,4 +36,5 @@ async def start(message: Message, command: CommandObject, i18n: I18nContext, dia
 
 @router.message(Command('admin'))
 async def admin_start(message: Message, dialog_manager: DialogManager):
-    await dialog_manager.start(MainAdminMenu.select_action)
+    if message.chat.id in config.admins or message.chat.id in config.devs:
+        await dialog_manager.start(MainAdminMenu.select_action)
