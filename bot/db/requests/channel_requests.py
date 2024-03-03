@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,22 +23,28 @@ class ChannelRequestsRepo:
         result = await self.session.execute(query)
         return result.scalars().first()
 
-    async def get_channels(self, channel_theme: str = None, channl_owner_id: int = None,  sort_type: str = "asc"):
-        if all([channel_theme, channl_owner_id]):
-            query = select(Channels).where(
-                Channels.channel_theme == channel_theme,
-                Channels.channel_owner_id == channl_owner_id
-            ).order_by(Channels.subs_amount.asc() if sort_type == "asc" else Channels.subs_amount.desc())
-        elif channel_theme:
-            query = select(Channels).where(
-                Channels.channel_theme == channel_theme
-            ).order_by(Channels.subs_amount.asc() if sort_type == "asc" else Channels.subs_amount.desc())
-        elif channl_owner_id:
-            query = select(Channels).where(
-                Channels.channel_owner_id == channl_owner_id
-            ).order_by(Channels.subs_amount.asc() if sort_type == "asc" else Channels.subs_amount.desc())
+    async def get_channels(self, channel_theme: str = None, channel_owner_id: int = None, sort_type: str = "asc", status: ChannelStatus | list[ChannelStatus] = None):
+        filters = []
+
+        if channel_theme:
+            filters.append(Channels.channel_theme == channel_theme)
+        if channel_owner_id:
+            filters.append(Channels.channel_owner_id == channel_owner_id)
+        if status:
+            if isinstance(status, list):
+                filters.append(Channels.status.in_(status))
+            else:
+                filters.append(Channels.status == status)
+
+        query = select(Channels)
+        if filters:
+            query = query.where(and_(*filters))
+
+        if sort_type == "asc":
+            query = query.order_by(Channels.subs_amount.asc())
         else:
-            query = select(Channels).order_by(Channels.subs_amount.asc() if sort_type == "asc" else Channels.subs_amount.desc())
+            query = query.order_by(Channels.subs_amount.desc())
+
         result = await self.session.execute(query)
         return result.scalars().all()
 
@@ -63,11 +69,25 @@ class ChannelRequestsRepo:
         result = await self.session.execute(query)
         return result.scalars().first()
 
+    async def get_channels_for_traffic(self):
+        query = select(ChannelsForTraffic)
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
     async def update_channel_for_traffic_status(self, channel_id: int, status: ChannelStatus):
         query = update(ChannelsForTraffic).where(
             ChannelsForTraffic.channel_id == channel_id
         ).values(
             status=status
+        )
+        await self.session.execute(query)
+        await self.session.commit()
+
+    async def update_channel(self, id_: int, **kwargs):
+        query = update(Channels).where(
+            Channels.id == id_
+        ).values(
+            kwargs
         )
         await self.session.execute(query)
         await self.session.commit()

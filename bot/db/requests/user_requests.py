@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +16,8 @@ class UserRequestsRepo:
             user_id=user_id,
             fullname=full_name,
             username=username,
-            refferer_id=refferer_id
+            refferer_id=refferer_id,
+            registration_date=datetime.datetime.now()
         ).on_conflict_do_nothing()
         await self.session.execute(query)
         await self.session.commit()
@@ -35,8 +38,17 @@ class UserRequestsRepo:
         result = await self.session.execute(query)
         return result.scalars().first()
 
-    async def get_users(self):
-        query = select(Users)
+    async def get_users(self, user_role: RoleTypes = None, refferer_id: int = None):
+        if user_role:
+            query = select(Users).where(
+                Users.role == user_role
+            )
+        elif refferer_id:
+            query = select(Users).where(
+                Users.refferer_id == refferer_id
+            )
+        else:
+            query = select(Users)
         result = await self.session.execute(query)
         return result.scalars().all()
 
@@ -87,3 +99,8 @@ class UserRequestsRepo:
             )
             await self.session.execute(query)
         await self.session.commit()
+
+    async def get_user_link(self, username: str):
+        query = select(Users).where(Users.username.like(f'%{username}%'))
+        result = await self.session.execute(query)
+        return result.scalars().all()

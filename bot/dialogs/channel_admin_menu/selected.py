@@ -9,7 +9,7 @@ from . import states
 from ..selected_main import not_working_zaliv, not_working_traffic_source
 from ..web_master_menu.states import MainMenu
 from ...db import Repo
-from ...utils.constants import TrafficSource, TargetSource
+from ...utils.constants import TrafficSource, TargetSource, RoleTypes
 from ...utils.misc import get_link_on_tg_user
 
 
@@ -24,7 +24,7 @@ async def on_select_channel_theme(call: CallbackQuery, widget: Select, manager: 
 
 
 async def on_select_target_source(call: CallbackQuery, widget: Select, dialog_manager: DialogManager, item_id: str):
-    if item_id in [TargetSource.ONLY_FANS, TargetSource.WEB_STORE]:
+    if item_id in [TargetSource.ONLY_FANS.name, TargetSource.WEB_STORE.name]:
         return await not_working_zaliv(call, widget, dialog_manager)
     dialog_manager.dialog_data.update(selected_target_source=item_id)
     await dialog_manager.switch_to(states.CreateOffer.select_traffic_source)
@@ -35,7 +35,7 @@ async def on_select_traffic_source(call: CallbackQuery, widget: Select, dialog_m
     if item_id not in [TrafficSource.TG_CHANNEL, TrafficSource.REELS, TrafficSource.TIK_TOK]:
         return await not_working_traffic_source(call, widget, dialog_manager)
     if item_id == TrafficSource.TG_CHANNEL:
-        return await dialog_manager.start(states.CreateOfferFromTGTraffic.select_topic)
+        return await dialog_manager.start(states.CreateOfferFromTGTraffic.select_theme)
     await dialog_manager.switch_to(states.CreateOffer.enter_offer_data)
 
 
@@ -70,7 +70,7 @@ async def on_enter_comment(message: Message, widget: ManagedTextInput, dialog_ma
     selected_channel_model = await repo.channel_repo.get_channel(dialog_manager.dialog_data['selected_channel_id'])
     owner_id = selected_channel_model.channel_owner_id
     username = message.from_user.username if message.from_user.username else f"<a href='{get_link_on_tg_user(owner_id)}'>{message.from_user.full_name}</a>"
-    text = i18n.get('channel_owner_id', username=username, comment=message_text)
+    text = i18n.get('T_new_offer_request', username=username, comment=message_text)
     await bot.send_message(owner_id, text)
     await message.answer(i18n.get('T_request_successfuly_sent'))
     await dialog_manager.start(MainMenu.select_action, mode=StartMode.RESET_STACK, show_mode=ShowMode.DELETE_AND_SEND)
@@ -79,3 +79,14 @@ async def on_enter_comment(message: Message, widget: ManagedTextInput, dialog_ma
 async def on_select_offer_status(call: CallbackQuery, widget: Select, dialog_manager: DialogManager, item_id: str):
     dialog_manager.dialog_data.update(selected_offer_status=item_id)
     await dialog_manager.start(states.AdminOffers.select_offer, data=dialog_manager.dialog_data)
+
+
+async def on_select_webmaster(call: CallbackQuery, widget: Button, manager: DialogManager):
+    repo: Repo = manager.middleware_data['repo']
+    start_data = manager.start_data
+    await repo.user_repo.update_user_role(call.from_user.id, RoleTypes.WEB_MASTER)
+
+
+async def on_select_sell_traffic(call: CallbackQuery, widget: Button, manager: DialogManager):
+    repo: Repo = manager.middleware_data['repo']
+    await repo.user_repo.update_user_role(call.from_user.id, RoleTypes.CHANNEL_OWNER)

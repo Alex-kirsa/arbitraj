@@ -17,6 +17,15 @@ class Config(BaseSettings):
     # I18N
     i18n_format_key: str
 
+    # Google Sheets
+    sheet_id: str
+
+    # Info channels
+    withdraw_channel_id: int
+    offers_channel_id: int
+    channels_channel_id: int
+    cooperation_channel_id: int
+
     # CryptoBot
     crypto_api_key: str
     crypto_bot_webhook_path: str
@@ -26,6 +35,10 @@ class Config(BaseSettings):
     add_channel: str
     withdraw_request: str
     payment_confirm: str
+
+    # Redirector Settings
+    redirect_token: str
+    redirect_base_url: str
 
     # Devs
     devs: list

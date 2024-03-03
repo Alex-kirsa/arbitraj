@@ -1,10 +1,10 @@
 import operator
 
 from aiogram_dialog.widgets.kbd import Group, Button, Select, ScrollingGroup, Start
-from aiogram_dialog.widgets.text import Format, Case
+from aiogram_dialog.widgets.text import Format, Multi
 from magic_filter import F
 
-from bot.utils.constants import RoleTypes, OfferStatus
+from bot.utils.constants import RoleTypes
 from bot.utils.i18n_utils.i18n_format import I18NFormat
 from . import states, selected
 
@@ -26,11 +26,11 @@ def select_action():
                 I18NFormat('I_personal_cabinet'),
                 id='I_personal_cabinet',
                 on_click=selected.on_start_personal_cabinet,
-                when=~F['first_init']
+                when=F['have_offer']
             ),
             when=F['user_role'] != RoleTypes.NEWBIE
         ),
-        width=1
+        width=2
 
     )
 
@@ -64,7 +64,7 @@ def personal_cabinet_menu():
             on_click=None,
         ),
 
-        width=1
+        width=2
     )
 
 
@@ -97,12 +97,9 @@ def select_traffic_source(on_click):
 def select_offer(on_click):
     return ScrollingGroup(
         Select(
-            Case(
-                {
-                    OfferStatus.ACTIVE: Format("{item[1]}"),
-                    OfferStatus.COMPLETED: Format("{item[1]} - {item[2]}"),
-                },
-                selector='offer_status'
+            Multi(
+                Format("{item[1]}") #when=F['offer_status'] == OfferStatus.ACTIVE.value),
+                # Format("{item[1]} - {item[2]}", when=F['offer_status'] == OfferStatus.COMPLETED.value)
             ),
             id='offers_kb',
             items='offers_list',

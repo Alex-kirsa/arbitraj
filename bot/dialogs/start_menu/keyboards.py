@@ -1,10 +1,9 @@
-from operator import itemgetter
-
-from aiogram_dialog.widgets.kbd import Group, Select, Button
-from aiogram_dialog.widgets.text import Format
+from aiogram_dialog.widgets.kbd import Group, Button, Start
+from aiogram_dialog.widgets.text import Const
 
 from bot.utils.i18n_utils.i18n_format import I18NFormat
 from . import selected, states
+from ..bot_admin_menu.states import MainAdminMenu
 
 
 def select_your_role():
@@ -34,5 +33,15 @@ def select_your_role():
             id='I_more_about_bot',
             on_click=None,
         ),
-
+        Start(
+            Const("Співпраця"),
+            id='cooperation',
+            state=states.Cooperation.send_cooperation_message,
+        ),
+        # Start(
+        #     Const("Админ панель"),
+        #     id='admin_panel',
+        #     state=MainAdminMenu.select_action,
+        # ),
+        width=2
     )

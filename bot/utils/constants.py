@@ -1,4 +1,4 @@
-from enum import StrEnum, Enum
+from enum import StrEnum
 
 
 class RoleTypes(StrEnum):
@@ -18,7 +18,7 @@ class TrafficSource(StrEnum):
     TG_CHANNEL = "Телеграм канал"
 
 
-class TargetSource(Enum):
+class TargetSource(StrEnum):
     """Источник трафика"""
     ONLY_FANS = "Сторінка OnlyFans"
     WEB_STORE = "Інтернет магазин"
@@ -36,15 +36,15 @@ categories_for_zaliv = {
 traffic_sources_dict = {
     TrafficSource.TIK_TOK: TrafficSource.TIK_TOK.value,
     TrafficSource.REELS: TrafficSource.REELS.value,
+    TrafficSource.TG_CHANNEL: TrafficSource.TG_CHANNEL.value,
     TrafficSource.TWITTER: TrafficSource.TWITTER.value,
     TrafficSource.REDDIT: TrafficSource.REDDIT.value,
-    TrafficSource.TG_CHANNEL: TrafficSource.TG_CHANNEL.value
 }
 
 target_sources_dict = {
-    TargetSource.ONLY_FANS: TargetSource.ONLY_FANS.value,
-    TargetSource.WEB_STORE: TargetSource.WEB_STORE.value,
-    TargetSource.TG_CHANNEL: TargetSource.TG_CHANNEL.value
+    TargetSource.TG_CHANNEL.name: TargetSource.TG_CHANNEL.value,
+    TargetSource.ONLY_FANS.name: TargetSource.ONLY_FANS.value,
+    TargetSource.WEB_STORE.name: TargetSource.WEB_STORE.value,
 }
 
 
@@ -73,16 +73,36 @@ class ChannelStatus(StrEnum):
     WAIT_ADMIN_CONFIRM = "wait_admin_confirm"
     WAIT_FOR_PAYMENT = "wait_for_payment"
     WAIT_CONFIRM_PAYMENT = "wait_confirm_payment"
+    CANCELED = "canceled"
     ACTIVE = "active"
 
 
 class OfferStatus(StrEnum):
     WAIT_FOR_PAYMENT = "wait_for_payment"
-    WAIT_CONFIRM_PAYMENT = "wait_confirm_payment"
+    WAIT_ADMIN_CONFIRM = "wait_admin_confirm"
     ACTIVE = "active"
     CANCELED = "canceled"
     COMPLETED = "completed"
     IN_WORK = "in_work"
+
+
+channels_status_named = {
+    ChannelStatus.ACTIVE.value: 'Активний',
+    ChannelStatus.WAIT_ADMIN_CONFIRM.value: 'Очікує підтвердження',
+    ChannelStatus.WAIT_FOR_PAYMENT.value: 'Очікує оплату',
+    ChannelStatus.WAIT_CONFIRM_PAYMENT.value: 'Очікує підтвердження оплати',
+    ChannelStatus.CANCELED.value: 'Скасований'
+}
+
+offers_status_named = {
+    OfferStatus.ACTIVE.value: 'Активний',
+    OfferStatus.WAIT_ADMIN_CONFIRM.value: 'Очікує підтвердження',
+    OfferStatus.WAIT_FOR_PAYMENT.value: 'Очікує оплату',
+    OfferStatus.CANCELED.value: 'Скасований',
+    OfferStatus.COMPLETED.value: 'Виконаний',
+    OfferStatus.IN_WORK.value: 'В роботі'
+
+}
 
 
 class GamblingOfferStatus(StrEnum):
@@ -114,3 +134,8 @@ class TopUpStatus(StrEnum):
     COMPLETED = "completed"
     COMPLETED_BY_CRYPTOBOT = "completed_by_cryptobot"
     CANCELED = "canceled"
+
+
+casinos_dict = {
+    '1': "Casino 1",
+}

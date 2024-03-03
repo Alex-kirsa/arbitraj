@@ -14,7 +14,7 @@ class CreateOffer(StatesGroup):
 
 
 class CreateOfferFromTGTraffic(StatesGroup):
-    select_topic = State()
+    select_theme = State()
     select_criteria_for_sort = State()
     select_channel = State()
     show_channel_info = State()

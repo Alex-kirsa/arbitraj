@@ -9,7 +9,9 @@ from bot.utils.i18n_utils.i18n_format import I18NFormat
 from . import keyboards, states, getters, selected
 from ..channel_owner_menu.getters import get_channel_themes
 from ..channel_owner_menu.keyboards import channel_theme_kb, get_channels_kb
+from ..channel_owner_menu.states import ChannelOwnerMainMenu
 from ..web_master_menu.keyboards import select_offer, select_target_source, select_traffic_source
+from ..web_master_menu.states import MainMenu
 from ...utils.constants import WebAppUrls, OfferStatus
 
 
@@ -20,12 +22,35 @@ def main_menu_window():
         Start(I18NFormat('I_back_to_selection'), id='back_to_first_menu',
               state=FirstStartWindow.select_your_role, mode=StartMode.RESET_STACK),
         state=states.ChannelAdminMainMenu.select_action,
+        getter=getters.get_main_menu_data,
     )
 
 
 def personal_cabinet_window():
     return Window(
         I18NFormat('T_personal_cabinet_admin_channel'),
+        Group(
+            Start(I18NFormat("I_create_offer"), "I_create_offer",
+                  state=states.CreateOffer.select_target_source),
+            Start(
+                I18NFormat("I_sell_traffic"),
+                id='I_sell_traffic',
+                on_click=selected.on_select_sell_traffic,
+                state=ChannelOwnerMainMenu.select_action
+            ),
+            Start(
+                I18NFormat("I_webmaster"),
+                id='I_webmaster',
+                on_click=selected.on_select_webmaster,
+                state=MainMenu.select_action
+
+            ),
+            Button(
+                I18NFormat("I_support"),
+                id='I_support',
+            ),
+            width=2
+        ),
         keyboards.offers_statuses(selected.on_select_offer_status),
         Cancel(I18NFormat('I_back')),
         state=states.ChannelAdminPersonalCabinet.select_offer_status,
@@ -37,11 +62,12 @@ def select_offer_window():
     return Window(
         Case(
             {
-                OfferStatus.ACTIVE: I18NFormat('I_all_active_offers'),
-                OfferStatus.COMPLETED: I18NFormat('I_all_completed_offers'),
+                OfferStatus.ACTIVE.value: I18NFormat('I_all_active_offers'),
+                OfferStatus.COMPLETED.value: I18NFormat('I_all_completed_offers'),
             },
             selector='offer_status'
         ),
+        # I18NFormat('I_all_active_offers'),
         select_offer(selected.on_select_offer),
         Cancel(I18NFormat('I_back')),
         state=states.AdminOffers.select_offer,
@@ -54,7 +80,6 @@ def show_offer_info_window():
         I18NFormat('T_offer_info'),
         Cancel(I18NFormat('I_back'), when='first_window'),
         Back(I18NFormat('I_back'), when=~F['first_window']),
-
         state=states.AdminOffers.show_offer_info,
         getter=getters.get_offer_info,
     )
@@ -104,9 +129,7 @@ def select_source_of_traffic():
 def enter_offer_data_window():
     return Window(
         I18NFormat('T_enter_offer_data'),
-        Group(
-            WebApp(I18NFormat("I_enter_offer_data"), Const(WebAppUrls.CREATE_OFFER_WEB_APP.value)),
-        ),
+        WebApp(I18NFormat("I_enter_offer_data"), Const(WebAppUrls.CREATE_OFFER_WEB_APP.value)),
         Back(I18NFormat('I_back')),
         state=states.CreateOffer.enter_offer_data,
         # getter=getters.get_entered_offer_data
@@ -139,12 +162,12 @@ def add_channel_window():
     )
 
 
-def select_topic_of_tg_traffic_channel_window():
+def select_theme_of_tg_traffic_channel_window():
     return Window(
         I18NFormat('T_select_channel_theme'),
         channel_theme_kb(selected.on_select_topic_of_tg_traffic_channel),
         Cancel(I18NFormat('I_back')),
-        state=states.CreateOfferFromTGTraffic.select_topic,
+        state=states.CreateOfferFromTGTraffic.select_theme,
         getter=get_channel_themes,
     )
 
@@ -163,9 +186,12 @@ def select_channel_window():
     return Window(
         I18NFormat('T_u_open_all_channels'),
         Button(
-            Multi(
-                I18NFormat('I_change_filter_from_max_to_min', when=F['sort_criteria'] == 'asc'),
-                I18NFormat('I_change_filter_from_min_to_max', when=F['sort_criteria'] == 'desc'),
+            Case(
+                {
+                    'asc': I18NFormat('I_change_filter_from_max_to_min'),
+                    'desc': I18NFormat('I_change_filter_from_min_to_max'),
+                },
+                selector='sort_criteria'
             ),
             id='change_sort_criteria',
             on_click=selected.on_change_sort_criteria

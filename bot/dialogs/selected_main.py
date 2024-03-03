@@ -21,4 +21,4 @@ async def not_working_criteria(call: CallbackQuery, widget: Any, dialog_manager:
 
 
 async def not_working_traffic_source(call: CallbackQuery, widget: Any, dialog_manager: DialogManager):
-    await call.answer("Цей джерело трафіку зараз не доступне")
+    await call.answer("Цей джерело трафіку зараз не доступне", show_alert=True)

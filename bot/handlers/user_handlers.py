@@ -68,6 +68,7 @@ async def add_bot_handler(
                 'payment_for': 'offer_purchase'
             }
             data.update(offer_data)
+            await state.update_data(data)
             # await bg.update(data)
             await dialog_manager.bg(user_id=inviter_id, chat_id=inviter_id).start(
                 TopUpOperations.select_pament_method, show_mode=ShowMode.DELETE_AND_SEND,

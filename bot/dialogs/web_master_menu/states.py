@@ -29,4 +29,4 @@ class ReferalSystem(StatesGroup):
 class MyOffers(StatesGroup):
     select_target_source = State()
     select_offer = State()
-    show_offer_info = State()
+    show_my_offer_info = State()

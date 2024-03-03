@@ -13,6 +13,7 @@ def channel_owner_main_menu_window():
         Start(I18NFormat('I_back_to_selection'), id='back_to_first_menu',
               state=FirstStartWindow.select_your_role, mode=StartMode.RESET_STACK),
         state=states.ChannelOwnerMainMenu.select_action,
+        getter=getters.get_channel_owner_main_menu_data,
     )
 
 

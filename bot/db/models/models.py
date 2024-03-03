@@ -1,5 +1,5 @@
 from sqlalchemy import ForeignKey, Enum
-from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, FLOAT, TEXT
+from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, FLOAT, TEXT, TIMESTAMP
 from sqlalchemy.orm import mapped_column
 
 from bot.db.base import Base
@@ -16,6 +16,7 @@ class Users(Base):
     balance = mapped_column(FLOAT, nullable=False, doc='Баланс пользователя', name='Баланс пользователя', default=0)
     earned = mapped_column(FLOAT, nullable=False, doc='Заработано денег', name='Заработано денег', default=0)
     earned_from_referals = mapped_column(FLOAT, nullable=False, doc='Заработано денег с рефералов', name='Заработано денег с рефералов', default=0)
+    registration_date = mapped_column(TIMESTAMP, nullable=False, doc='Дата регистрации', name='Дата регистрации')
     refferer_id = mapped_column(BIGINT, nullable=True, doc='ID реферала', name='ID реферала')
 
 
@@ -24,7 +25,7 @@ class ChannelsForTraffic(Base):
 
     id = mapped_column(BIGINT, primary_key=True)
     channel_id = mapped_column(BIGINT, nullable=False, unique=True, doc='ID канала', name='ID канала')
-    channel_owner_id = mapped_column(BIGINT, ForeignKey(Users.user_id), nullable=False, doc='ID владельца канала', name='ID владельца канала')
+    channel_owner_id = mapped_column(BIGINT, nullable=False, doc='ID владельца канала', name='ID владельца канала')
     channel_title = mapped_column(VARCHAR(255), nullable=False, doc='Название канала', name='Название канала')
     status = mapped_column(Enum(ChannelStatus), nullable=False, default=ChannelStatus.WAIT_FOR_PAYMENT)
 
@@ -41,10 +42,10 @@ class Channels(Base):
     subs_amount = mapped_column(BIGINT, nullable=False, doc='Количество подписчиков', name='Количество подписчиков')
     male_percent = mapped_column(FLOAT, nullable=False, doc='Процент мужчин', name='Процент мужчин')
     female_percent = mapped_column(FLOAT, nullable=False, doc='Процент женщин', name='Процент женщин')
-    avg_reach_one_publication = mapped_column(FLOAT, nullable=False, doc='Средний охват одной публикации', name='Средний охват одной публикации')
-    avg_reach_one_ad_publication = mapped_column(FLOAT, nullable=False, doc='Средний охват одной рекламной публикации', name='Средний охват одной рекламной публикации')
+    avg_reach_one_publication = mapped_column(VARCHAR(255), nullable=False, doc='Средний охват одной публикации', name='Средний охват одной публикации')
+    avg_reach_one_ad_publication = mapped_column(VARCHAR(255), nullable=False, doc='Средний охват одной рекламной публикации', name='Средний охват одной рекламной публикации')
     minimal_ad_price = mapped_column(FLOAT, nullable=False, doc='Минимальная цена рекламы', name='Минимальная цена рекламы')
-    comment = mapped_column(TEXT, nullable=False, doc='Комментарий', name='Комментарий')
+    comment = mapped_column(VARCHAR(255), nullable=False, doc='Комментарий', name='Комментарий')
     contact = mapped_column(VARCHAR(255), nullable=False, doc='Контакт', name='Контакт')
     status = mapped_column(Enum(ChannelStatus), nullable=False, default=ChannelStatus.WAIT_ADMIN_CONFIRM)
 
@@ -76,7 +77,7 @@ class GamblingOffers(Base):
     __tablename__ = "gambling_offers"
 
     id = mapped_column(BIGINT, primary_key=True)
-    casino_name = mapped_column(VARCHAR(255), nullable=False, doc='Название оффера', name='Название оффера')
+    casino_name = mapped_column(VARCHAR(255), nullable=False, unique=True, doc='Название оффера', name='Название оффера')
     status = mapped_column(Enum(GamblingOfferStatus), nullable=False, doc='Статус оффера', name='Статус оффера')
 
 
@@ -85,7 +86,7 @@ class GamblingOffersLinks(Base):
 
     id = mapped_column(BIGINT, primary_key=True)
     gambling_offer_id = mapped_column(BIGINT, ForeignKey(GamblingOffers.id), nullable=False, doc='ID оффера', name='ID оффера')
-    link = mapped_column(VARCHAR(255), nullable=False, doc='Ссылка на оффер', name='Ссылка на оффер')
+    link = mapped_column(VARCHAR(255), nullable=False, unique=True, doc='Ссылка на оффер', name='Ссылка на оффер')
     user_id = mapped_column(BIGINT, nullable=True, doc='ID пользователя', name='ID пользователя')
     current_deposit = mapped_column(FLOAT, nullable=False, doc='Текущий депозит', name='Текущий депозит', default=0)
 
@@ -100,7 +101,7 @@ class OffersInWork(Base):
     earned_money = mapped_column(FLOAT, nullable=False, doc='Заработано денег', name='Заработано денег', default=0)
     channel_invite_link = mapped_column(VARCHAR(255), nullable=False, unique=True, doc='Ссылка на канал', name='Ссылка на канал')
     redirect_link = mapped_column(VARCHAR(255), nullable=False, unique=True, doc='Ссылка на редирект', name='Ссылка на редирект')
-    status = mapped_column(Enum(OfferStatus), nullable=False, doc='Статус оффера', name='Статус оффера')
+    status = mapped_column(Enum(OfferStatus), nullable=False, doc='Статус оффера', name='Статус оффера', default=OfferStatus.IN_WORK)
 
 
 class ChannelInviteRequests(Base):
@@ -119,6 +120,7 @@ class TopUpRequests(Base):
     id = mapped_column(BIGINT, primary_key=True)
     user_id = mapped_column(BIGINT, ForeignKey(Users.user_id), nullable=False, doc='ID пользователя', name='ID пользователя')
     offer_id = mapped_column(BIGINT, ForeignKey(Offers.id), nullable=True, doc='ID оффера', name='ID оффера')
+    channel_id = mapped_column(BIGINT, ForeignKey(Channels.id), nullable=True, doc='ID канала', name='ID канала')
     payment_method = mapped_column(VARCHAR(255), nullable=False, doc='Тип пополнения', name='Тип пополнения')
     fullname = mapped_column(VARCHAR(255), nullable=True, doc='ФИО', name='ФИО')
     last_4_digits_credit_card = mapped_column(VARCHAR(4), nullable=True, doc='Последние 4 цифры карты', name='Последние 4 цифры карты')

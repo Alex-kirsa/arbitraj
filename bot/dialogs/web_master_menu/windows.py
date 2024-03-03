@@ -65,17 +65,16 @@ def select_offer_window():
 
 def show_offer_info_window():
     return Window(
-
         Case(
             {
-                TargetSource.TG_CHANNEL: Multi(
+                TargetSource.TG_CHANNEL.name: Multi(
                     I18NFormat('T_offer_info'),
-                    I18NFormat('link_for_offer'),
+                    I18NFormat('requests_amount_left'),
                     sep='\n\n'
                 ),
-                TargetSource.GAMBLING: Multi(
+                TargetSource.GAMBLING.name: Multi(
                     I18NFormat('T_offer_info_gambling'),
-                    I18NFormat('deposit_and_link'),
+                    # I18NFormat('deposit_and_link'),
                     sep='\n\n'
                 )
             },
@@ -94,12 +93,14 @@ def take_offer_window():
             I18NFormat('offer_took'),
             Case(
                 {
-                    TargetSource.TG_CHANNEL: Multi(
+                    TargetSource.TG_CHANNEL.name: Multi(
                         I18NFormat('T_offer_info'),
+                        I18NFormat('requests_amount_left'),
                         I18NFormat('link_for_offer'),
+
                         sep='\n\n'
                     ),
-                    TargetSource.GAMBLING: Multi(
+                    TargetSource.GAMBLING.name: Multi(
                         I18NFormat('T_offer_info_gambling'),
                         I18NFormat('deposit_and_link'),
                         sep='\n\n'
@@ -109,9 +110,10 @@ def take_offer_window():
             ),
             sep='\n\n'
         ),
-        Back(I18NFormat('I_back')),
+        Cancel(I18NFormat('I_back')),
         state=states.SelectWebMasterOffer.took_offer_action,
         getter=getters.get_taked_offer_info,
+        disable_web_page_preview=True
 
     )
 
@@ -119,7 +121,7 @@ def take_offer_window():
 def withdraw_window():
     return Window(
         I18NFormat('T_financial_report'),
-        WebApp(I18NFormat('ask_for_withdraw'), Const(WebAppUrls.WITHDRAW_FUNDS_WEB_APP.value)),
+        WebApp(I18NFormat('ask_for_withdraw'), Const(WebAppUrls.WITHDRAW_FUNDS_WEB_APP.value), when=F['balance'] > 250),
         Row(
             Cancel(I18NFormat('I_back')),
             Start(I18NFormat('I_back_to_menu'),
@@ -162,7 +164,7 @@ def my_offers_window():
 def select_my_offer_window():
     return Window(
         I18NFormat('T_active_offers_menu'),
-        keyboards.select_offer(selected.on_select_offer),
+        keyboards.select_offer(selected.on_select_offer_my_offere),
         Back(I18NFormat('I_back')),
         state=states.MyOffers.select_offer,
         getter=getters.get_offers_in_user,
@@ -173,13 +175,13 @@ def show_my_offer_info_window():
     return Window(
         Case(
             {
-                TargetSource.TG_CHANNEL: Multi(
+                TargetSource.TG_CHANNEL.name: Multi(
                     I18NFormat('T_offer_info'),
                     I18NFormat('offer_progress'),
                     I18NFormat('link_for_offer'),
                     sep='\n\n'
                 ),
-                TargetSource.GAMBLING: Multi(
+                TargetSource.GAMBLING.name: Multi(
                     I18NFormat('T_offer_info_gambling'),
                     I18NFormat('deposit_and_link'),
                     sep='\n\n'
@@ -188,6 +190,7 @@ def show_my_offer_info_window():
             selector='selected_target_source'
         ),
         Back(I18NFormat('I_back')),
-        state=states.MyOffers.show_offer_info,
+        state=states.MyOffers.show_my_offer_info,
         getter=getters.get_offer_info_in_user,
+        disable_web_page_preview=True
     )

@@ -4,7 +4,10 @@ from aiogram_dialog.widgets.kbd import Group, Start, Button, ScrollingGroup, Sel
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.utils.i18n_utils.i18n_format import I18NFormat
-from . import states, selected
+from . import selected
+from . import states
+from ..channel_admin_menu.states import ChannelAdminMainMenu
+from ..web_master_menu.states import MainMenu
 from ...utils.constants import WebAppUrls
 
 
@@ -22,14 +25,16 @@ def select_action():
         Start(
             I18NFormat("I_personal_cabinet"),
             id='I_personal_cabinet',
-            state=states.ChannelOwnerPersonalCabinet.select_action
+            state=states.ChannelOwnerPersonalCabinet.select_action,
+            when='have_channel'
         ),
-        width=1
+        width=2
     )
 
 
 def personal_cabinet_kb():
     return Group(
+
         WebApp(
             I18NFormat("I_add_channel"),
             Const(WebAppUrls.ADD_CHANNEL_WEB_APP.value)
@@ -39,6 +44,24 @@ def personal_cabinet_kb():
             id='I_active_channels',
             state=states.UserChannels.select_channel,
         ),
+        Start(
+            I18NFormat("I_buy_traffic"),
+            id='i_buy_traffic',
+            on_click=selected.on_select_buy_traffic,
+            state=ChannelAdminMainMenu.select_action
+        ),
+        Start(
+            I18NFormat("I_webmaster"),
+            id='I_webmaster',
+            on_click=selected.on_select_webmaster,
+            state=MainMenu.select_action
+        ),
+        Button(
+            I18NFormat("I_support"),
+            id='I_support',
+        ),
+        width=2
+
     )
 
 
@@ -88,5 +111,3 @@ def get_channels_kb(on_click=None):
         height=6,
         hide_on_single_page=True
     )
-
-

@@ -3,10 +3,10 @@ from aiogram_dialog.widgets.kbd import Cancel, Start, WebApp
 from aiogram_dialog.widgets.text import Case, Const
 from magic_filter import F
 
-from bot.utils.i18n_utils.i18n_format import I18NFormat
-from . import states, getters, keyboards
 from bot.dialogs.channel_admin_menu import states as channel_admin_states
 from bot.dialogs.channel_owner_menu import states as channel_owner_states
+from bot.utils.i18n_utils.i18n_format import I18NFormat
+from . import states, getters, keyboards
 from ...utils.constants import RoleTypes, WebAppUrls
 
 
@@ -35,7 +35,7 @@ def confirm_payment_window():
               when=F['payment_for'] == 'offer_purchase'),
         Start(I18NFormat('T_denie'), id='denie_payment',
               state=channel_owner_states.ChannelOwnerMainMenu.select_action, mode=StartMode.RESET_STACK,
-              when=F['payment_for'] == 'account_purchase'),
+              when=F['payment_for'] == 'channel_purchase'),
         state=states.TopUpOperations.confirm_payment,
         getter=getters.get_payment_info
     )
@@ -44,12 +44,12 @@ def confirm_payment_window():
 def data_save_window():
     return Window(
         I18NFormat('T_data_saved'),
-        Start(I18NFormat('main_menu'), id='denie_payment',
+        Start(I18NFormat('main_menu'), id='to_main_menu',
               state=channel_admin_states.ChannelAdminMainMenu.select_action, mode=StartMode.RESET_STACK,
               when=F['payment_for'] == 'offer_purchase'),
-        Start(I18NFormat('main_menu'), id='denie_payment',
-              state=channel_owner_states.ChannelOwnerMainMenu.select_action, mode=StartMode.RESET_STACK,
-              when=F['payment_for'] == 'account_purchase'),
+        Cancel(I18NFormat('main_menu'), id='close_new_stack_window',
+               # state=channel_owner_states.ChannelOwnerMainMenu.select_action, mode=StartMode.RESET_STACK,
+               when=F['payment_for'] == 'channel_purchase'),
         state=states.TopUpOperations.data_saved,
         getter=getters.get_data_for_save
     )

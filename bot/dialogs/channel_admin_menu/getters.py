@@ -4,11 +4,19 @@ from aiogram_dialog import DialogManager
 from aiogram_i18n import I18nContext
 
 from bot.db import Repo
-from bot.utils.constants import traffic_sources_dict, target_sources_dict, OfferStatus, DEFAULT_CHANNEL_TOPPICS
+from bot.utils.constants import traffic_sources_dict, target_sources_dict, OfferStatus, DEFAULT_CHANNEL_TOPPICS, ChannelStatus
+
+
+async def get_main_menu_data(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
+    return {
+        'have_offers': bool(await repo.offer_repo.get_offers(user_id=event_from_user.id))
+    }
 
 
 async def get_admin_offers(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
-    admin_offers = await repo.offer_repo.get_offers(status=dialog_manager.start_data['selected_offer_status'])
+
+    admin_offers = await repo.offer_repo.get_offers(status=dialog_manager.start_data['selected_offer_status'], user_id=event_from_user.id)
+
     return {
         "offers_list": [
             (offer.id, f"{offer.channel_name}", offer.target_request_amount) for offer in admin_offers
@@ -65,7 +73,6 @@ async def get_target_sources(dialog_manager: DialogManager, repo: Repo, event_fr
 
 async def get_entered_offer_data(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
     dialog_data = dialog_manager.dialog_data
-    print(dialog_data)
     text = (f"Назва каналу: {dialog_data['channel_title']}\n"
             f"Тематика каналу: {dialog_data['channel_theme']}\n"
             f"Необхідна кількість заявок: {dialog_data['amount_requests']}\n"
@@ -103,8 +110,7 @@ async def get_criteria_for_sort(dialog_manager: DialogManager, **middleware_data
 
 async def get_channels_with_criteria(dialog_manager: DialogManager, repo: Repo, **middleware_data):
     sort_criteria = dialog_manager.dialog_data.get('sort_criteria', 'asc')
-    channels_model = await repo.channel_repo.get_channels(sort_type=sort_criteria)
-    print(dialog_manager.dialog_data.get('selected_channel_theme'))
+    channels_model = await repo.channel_repo.get_channels(sort_type=sort_criteria, status=ChannelStatus.ACTIVE)
     return {
         'channels_list': [
             (channel.id, f"{channel.channel_title} - {channel.subs_amount} підпис.") for channel in channels_model
@@ -132,3 +138,5 @@ async def get_offers_with_theme(dialog_manager: DialogManager, repo: Repo, **mid
         ] if channels_model else [],
         'category': DEFAULT_CHANNEL_TOPPICS.get(dialog_manager.dialog_data.get('selected_channel_theme'))
     }
+
+

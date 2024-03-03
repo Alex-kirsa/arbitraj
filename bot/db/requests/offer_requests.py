@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,56 +22,56 @@ class OfferRequestsRepo:
                          target_source: str = None,
                          source_traffic: str = None,
                          channel_theme: str = None,
-                         status: str = None,
+                         status: OfferStatus | list[OfferStatus] = None,
                          ):
-        if all([offer_id, user_id, channel_theme, target_source, source_traffic, status]):
-            query = select(Offers).where(
-                Offers.id == offer_id,
-                Offers.user_id == user_id,
-                Offers.channel_theme == channel_theme,
-                Offers.target_source == target_source,
-                Offers.traffic_source == source_traffic,
-                Offers.status == status
-            )
-        elif offer_id:
-            query = select(Offers).where(
-                Offers.id == offer_id
-            )
+        filters = []
+
+        if offer_id:
+            query = select(Offers).where(Offers.id == offer_id)
             result = await self.session.execute(query)
             return result.scalars().first()
-        elif user_id:
-            query = select(Offers).where(
-                Offers.user_id == user_id
-            )
 
-        # elif offer_type:
-        #     query = select(Offers).where(
-        #         Offers.offer_type == offer_type
-        #     )
-        elif channel_theme:
-            query = select(Offers).where(
-                Offers.channel_theme == channel_theme
-            )
-        elif target_source:
-            query = select(Offers).where(
-                Offers.target_source == target_source
-            )
-        elif source_traffic:
-            query = select(Offers).where(
-                Offers.traffic_source == source_traffic
-            )
-        elif status:
-            query = select(Offers).where(
-                Offers.status == status
-            )
-        else:
-            return None
+        if user_id:
+            filters.append(Offers.user_id == user_id)
+        if target_source:
+            filters.append(Offers.target_source == target_source)
+        if source_traffic:
+            filters.append(Offers.traffic_source == source_traffic)
+        if channel_theme:
+            filters.append(Offers.channel_theme == channel_theme)
+        if status:
+            if isinstance(status, list):
+                filters.append(Offers.status.in_(status))
+            else:
+                filters.append(Offers.status == status)
+
+        query = select(Offers)
+        if filters:
+            query = query.where(and_(*filters))
+
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
+    async def get_offers_by_target_source_and_traffic_source(self, target_source: str, traffic_source: str):
+        query = select(Offers).where(
+            Offers.target_source == target_source,
+            Offers.traffic_source == traffic_source
+        )
         result = await self.session.execute(query)
         return result.scalars().all()
 
     async def update_offer(self, offer_id: int, **kwargs):
         query = update(Offers).where(
             Offers.id == offer_id
+        ).values(
+            **kwargs
+        )
+        await self.session.execute(query)
+        await self.session.commit()
+
+    async def update_offer_in_work(self, id_: int, **kwargs):
+        query = update(OffersInWork).where(
+            OffersInWork.id == id_,
         ).values(
             **kwargs
         )
@@ -93,7 +93,7 @@ class OfferRequestsRepo:
 
     async def get_offer_in_work(self, offer_id: int = None, user_id_web_master: int = None,
                                 channel_invite_link: str = None, redirect_link: str = None,
-                                status: str = None):
+                                status: str = None, id_: int = None):
         query = select(OffersInWork)
         if all([offer_id, user_id_web_master, channel_invite_link, redirect_link, status]):
             query = select(OffersInWork).where(
@@ -107,8 +107,6 @@ class OfferRequestsRepo:
             query = select(OffersInWork).where(
                 OffersInWork.offer_id == offer_id
             )
-            result = await self.session.execute(query)
-            return result.scalars().first()
         elif user_id_web_master:
             query = select(OffersInWork).where(
                 OffersInWork.user_id_web_master == user_id_web_master
@@ -129,6 +127,12 @@ class OfferRequestsRepo:
             query = select(OffersInWork).where(
                 OffersInWork.status == status
             )
+        elif id_:
+            query = select(OffersInWork).where(
+                OffersInWork.id == id_
+            )
+            result = await self.session.execute(query)
+            return result.scalars().first()
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -142,6 +146,16 @@ class OfferRequestsRepo:
             query = query.where(OffersInWork.status == status)
         result = await self.session.execute(query)
         return result.scalars().first()
+
+    async def add_channel_invite_request(self, user_id: int, channel_id: int, invite_link: str, offer_id: int):
+        query = insert(ChannelInviteRequests).values(
+            user_id=user_id,
+            channel_id=channel_id,
+            invite_link=invite_link,
+            offer_id=offer_id
+        ).on_conflict_do_nothing()
+        await self.session.execute(query)
+        await self.session.commit()
 
     async def get_channel_invite_requests(self, user_id: int = None, channel_id: int = None, invite_link: str | list = None, offer_id: int = None):
         if all([user_id, channel_id, invite_link, offer_id]):
@@ -172,7 +186,15 @@ class OfferRequestsRepo:
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def get_gambling_offers(self, offer_id: int = None, status: str = None):
+    async def get_channel_invite_requests_by_user_id(self, user_id: int, link: str):
+        query = select(ChannelInviteRequests).where(
+            ChannelInviteRequests.user_id == user_id,
+            ChannelInviteRequests.invite_link == link
+        )
+        result = await self.session.execute(query)
+        return result.scalars().first()
+
+    async def get_gambling_offers(self, offer_id: int = None, casino_name: str = None, status: str = None):
         if all([offer_id, status]):
             query = select(GamblingOffers).where(
                 GamblingOffers.id == offer_id,
@@ -188,39 +210,40 @@ class OfferRequestsRepo:
             query = select(GamblingOffers).where(
                 GamblingOffers.status == status
             )
+        elif casino_name:
+            query = select(GamblingOffers).where(
+                GamblingOffers.casino_name == casino_name
+            )
+            result = await self.session.execute(query)
+            return result.scalars().first()
         else:
             query = select(GamblingOffers)
         result = await self.session.execute(query)
         return result.scalars().all()
 
     async def get_gambling_offer_links(self, offer_id: int = None, user_id: int = None, link: str = None, current_deposit: float = None):
+        filters = []
+
         if all([offer_id, user_id, link, current_deposit]):
-            query = select(GamblingOffersLinks).where(
+            filters.extend([
                 GamblingOffersLinks.gambling_offer_id == offer_id,
                 GamblingOffersLinks.user_id == user_id,
                 GamblingOffersLinks.link == link,
                 GamblingOffersLinks.current_deposit == current_deposit
-            )
+            ])
         elif offer_id:
-            query = select(GamblingOffersLinks).where(
-                GamblingOffersLinks.gambling_offer_id == offer_id
-            )
-            result = await self.session.execute(query)
-            return result.scalars().first()
+            filters.append(GamblingOffersLinks.gambling_offer_id == offer_id)
         elif user_id:
-            query = select(GamblingOffersLinks).where(
-                GamblingOffersLinks.user_id == user_id
-            )
+            filters.append(GamblingOffersLinks.user_id == user_id)
         elif link:
-            query = select(GamblingOffersLinks).where(
-                GamblingOffersLinks.link == link
-            )
+            filters.append(GamblingOffersLinks.link == link)
         elif current_deposit:
-            query = select(GamblingOffersLinks).where(
-                GamblingOffersLinks.current_deposit == current_deposit
-            )
-        else:
-            query = select(GamblingOffersLinks)
+            filters.append(GamblingOffersLinks.current_deposit == current_deposit)
+
+        query = select(GamblingOffersLinks)
+        if filters:
+            query = query.where(*filters)
+
         result = await self.session.execute(query)
         return result.scalars().all()
 
@@ -235,7 +258,7 @@ class OfferRequestsRepo:
     async def get_free_gambling_offer_link(self, gambling_offer_id: int):
         query = select(GamblingOffersLinks).where(
             GamblingOffersLinks.gambling_offer_id == gambling_offer_id,
-            GamblingOffersLinks.user_id == None
+            GamblingOffersLinks.user_id.is_(None)
         )
         result = await self.session.execute(query)
         return result.scalars().first()
@@ -264,5 +287,22 @@ class OfferRequestsRepo:
         ).values(
             status=status
         )
+        await self.session.execute(query)
+        await self.session.commit()
+
+    async def add_gambling_offer(self, casino_name: str, status: GamblingOfferStatus):
+        query = GamblingOffers(
+            casino_name=casino_name,
+            status=status
+        )
+        self.session.add(query)
+        await self.session.commit()
+        return query
+
+    async def add_gambling_offer_link(self, gambling_offer_id: int, link: str):
+        query = insert(GamblingOffersLinks).values(
+            gambling_offer_id=gambling_offer_id,
+            link=link,
+        ).on_conflict_do_nothing()
         await self.session.execute(query)
         await self.session.commit()

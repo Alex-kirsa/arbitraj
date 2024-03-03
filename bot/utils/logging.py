@@ -15,15 +15,15 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=6, exception=record.exc_info).log(record.levelname, record.getMessage())
 
 
-file_log = logging.FileHandler("bot/utils/logs/Log.log", encoding="utf-8")
-# console_out = logging.StreamHandler()
-logger.add(
-    "bot/utils/misc/logs/debug.log",
-    format="{time} {level} {message}",
-    level="INFO",
-)
+# file_log = logging.FileHandler("bot/utils/logs/Log.log", encoding="utf-8")
+# # console_out = logging.StreamHandler()
+# logger.add(
+#     "bot/utils/misc/logs/debug.log",
+#     format="{time} {level} {message}",
+#     level="INFO",
+# )
 logging.basicConfig(
-    handlers=(file_log, InterceptHandler()),
+    handlers=(InterceptHandler(),),
     format="%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s]  %(message)s",
     datefmt="%m.%d.%Y %H:%M:%S",
     level=logging.INFO,

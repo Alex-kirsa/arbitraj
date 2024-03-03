@@ -2,6 +2,8 @@ import datetime
 
 from aiogram.utils.link import create_telegram_link
 
+from bot.services.redirect_service import gen_redirect_link
+
 
 async def check_enough_rights(bot_rights):
     can_post_message = bot_rights.can_post_messages
@@ -32,6 +34,8 @@ def get_link_on_tg_user(user_id: int):
     return create_telegram_link("user", user_id)
 
 
-def create_link_for_publish(default_tg_link: str):
-    custom_redirect_link = default_tg_link
+async def create_link_for_publish(default_tg_link: str):
+    # TOOD: REDIRECT SERVICE
+    custom_redirect_link: str = await gen_redirect_link(default_tg_link)
     return custom_redirect_link
+
