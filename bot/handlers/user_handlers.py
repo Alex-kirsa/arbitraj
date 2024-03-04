@@ -92,8 +92,10 @@ async def del_bot_from_channel(
     await i18n.set_locale("uk")
     offers_in_channel = await repo.offer_repo.get_offers(channel_id=chat_id, status=[OfferStatus.IN_WORK, OfferStatus.ACTIVE])
     if offers_in_channel and bot_rights.status in (ChatMemberStatus.LEFT, ChatMemberStatus.KICKED, ChatMemberStatus.RESTRICTED):
-        await repo.offer_repo.update_offer(offers_in_channel.id, status=OfferStatus.BOT_HAVE_NO_RIGHTS)
+        for offer in offers_in_channel:
+            await repo.offer_repo.update_offer(offer.id, status=OfferStatus.BOT_HAVE_NO_RIGHTS)
         return await bot.send_message(update.from_user.id, i18n.get("bot_was_deleted_from_channel", channel_name=update.chat.title))
     elif offers_in_channel and not await check_enough_rights(bot_rights):
-        await repo.offer_repo.update_offer(offers_in_channel.id, status=OfferStatus.BOT_HAVE_NO_RIGHTS)
+        for offer in offers_in_channel:
+            await repo.offer_repo.update_offer(offer.id, status=OfferStatus.BOT_HAVE_NO_RIGHTS)
         return await bot.send_message(update.from_user.id, i18n.get("bot_was_deleted_from_channel", channel_name=update.chat.title))
