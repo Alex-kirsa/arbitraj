@@ -26,7 +26,7 @@ def select_action():
                 I18NFormat('I_personal_cabinet'),
                 id='I_personal_cabinet',
                 on_click=selected.on_start_personal_cabinet,
-                # when=F['have_offer']
+                when=F['have_offer']
             ),
             when=F['user_role'] != RoleTypes.NEWBIE
         ),

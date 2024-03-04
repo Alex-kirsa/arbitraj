@@ -1,4 +1,5 @@
 from aiogram import Router, Bot, Dispatcher
+from aiogram.enums import ChatMemberStatus
 from aiogram.types import ChatMemberUpdated
 from aiogram_dialog import DialogManager, ShowMode
 from aiogram_i18n import I18nContext
@@ -26,7 +27,6 @@ async def add_bot_handler(
     chat_id = update.chat.id
     chat_title = update.chat.title
     await i18n.set_locale("uk")
-    print(111)
     channel_model = await repo.channel_repo.get_channel_for_traffic(chat_id)
     state = dp.fsm.get_context(bot=bot, user_id=inviter_id, chat_id=inviter_id)
     if channel_model:
@@ -91,7 +91,9 @@ async def del_bot_from_channel(
     chat_title = update.chat.title
     await i18n.set_locale("uk")
     offers_in_channel = await repo.offer_repo.get_offers(channel_id=chat_id, status=[OfferStatus.IN_WORK, OfferStatus.ACTIVE])
-    if offers_in_channel and not await check_enough_rights(bot_rights):
-        print(1234)
+    if offers_in_channel and bot_rights.status in (ChatMemberStatus.LEFT, ChatMemberStatus.KICKED, ChatMemberStatus.RESTRICTED):
+        await repo.offer_repo.update_offer(offers_in_channel.id, status=OfferStatus.BOT_HAVE_NO_RIGHTS)
+        return await bot.send_message(update.from_user.id, i18n.get("bot_was_deleted_from_channel", channel_name=update.chat.title))
+    elif offers_in_channel and not await check_enough_rights(bot_rights):
         await repo.offer_repo.update_offer(offers_in_channel.id, status=OfferStatus.BOT_HAVE_NO_RIGHTS)
         return await bot.send_message(update.from_user.id, i18n.get("bot_was_deleted_from_channel", channel_name=update.chat.title))
