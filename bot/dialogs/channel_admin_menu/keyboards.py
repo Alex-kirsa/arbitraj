@@ -15,7 +15,8 @@ def select_action():
         #       state=states.ChannelPosterAdminMenu.select_topic),
         Start(I18NFormat("I_personal_cabinet"), "I_personal_cabinet",
               state=states.ChannelAdminPersonalCabinet.select_offer_status,
-              when='have_offers'),
+              # when='have_offers'
+              ),
         width=2
 
     )
