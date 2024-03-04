@@ -59,7 +59,7 @@ def select_offer_window():
         keyboards.select_offer(selected.on_select_offer),
         Back(I18NFormat('I_back')),
         state=states.SelectWebMasterOffer.select_webmaster_offer,
-        getter=getters.get_offers,
+        getter=getters.get_webmaster_offers,
     )
 
 

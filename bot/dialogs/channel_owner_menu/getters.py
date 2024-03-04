@@ -2,7 +2,7 @@ from aiogram.types import User
 from aiogram_dialog import DialogManager
 
 from bot.db import Repo
-from bot.utils.constants import DEFAULT_CHANNEL_TOPPICS, ChannelStatus
+from bot.utils.constants import DEFAULT_CHANNEL_TOPICS, ChannelStatus
 
 
 async def get_personal_cabinet_data(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
@@ -54,7 +54,7 @@ async def get_channel_info(dialog_manager: DialogManager, repo: Repo, event_from
 
 async def get_channel_themes(dialog_manager: DialogManager, **middleware_data):
     return {
-        'channel_topics': [(topic_key, topic_value) for topic_key, topic_value in DEFAULT_CHANNEL_TOPPICS.items()]
+        'channel_topics': [(topic_key, topic_value) for topic_key, topic_value in DEFAULT_CHANNEL_TOPICS.items()]
     }
 
 
@@ -62,7 +62,7 @@ async def get_channels_in_theme(dialog_manager: DialogManager,  repo: Repo, even
     selected_topic = dialog_manager.dialog_data['selected_channel_topic']
     channels_list = await repo.channel_repo.get_channels(channel_theme=selected_topic)
     return {
-        'category': DEFAULT_CHANNEL_TOPPICS.get(selected_topic),
+        'category': DEFAULT_CHANNEL_TOPICS.get(selected_topic),
         'channels_list': [(channel.id, f"{channel.channel_title}-{channel.subs_amount}") for channel in channels_list]
     }
 

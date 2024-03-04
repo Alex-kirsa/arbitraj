@@ -1,14 +1,16 @@
+import os
+
 from aiogram import Bot
-from arq import cron
+from aiogram_i18n.cores import FluentRuntimeCore
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
     AsyncSession,
 )
 
-from bot.services.scheduler.func import send_schedule_message
-from configreader import config, RedisConfig
 from bot.db.base import metadata
+from bot.services.scheduler.func import send_scheduled_message
+from configreader import config, RedisConfig
 
 
 async def startup(ctx):
@@ -23,19 +25,19 @@ async def startup(ctx):
     )
     ctx["db_factory"] = db_factory
     ctx['bot'] = Bot(token=config.bot_token, parse_mode='HTML')
+    path_to_locales = os.path.join("bot", "locales", "{locale}", "LC_MESSAGES")
+    core = FluentRuntimeCore(path=path_to_locales, default_locale="ru")
+    await core.startup()
+    ctx["core"] = core
 
 
 async def shutdown(ctx):
-    # bot: Bot = ctx['bot']
-    # await bot.session.close()
-    pass
+    bot: Bot = ctx['bot']
+    await bot.session.close()
 
 
 class WorkerSettings:
     redis_settings = RedisConfig.pool_settings
     on_startup = startup
     on_shutdown = shutdown
-    functions = [send_schedule_message,]
-    cron_jobs = [
-        cron('bot.services.scheduler.func.send_schedule_message', minute={0, 15, 30, 45}, max_tries=3, run_at_startup=True)
-    ]
+    functions = [send_scheduled_message, ]

@@ -2,13 +2,14 @@ import logging
 
 from aiocryptopay import AioCryptoPay
 from aiogram import Dispatcher, Bot
+from aiogram.fsm.context import FSMContext
 from aiogram.types import User
 from aiogram_dialog import DialogManager
 from aiogram_i18n import I18nContext
 
 from bot.db import Repo
 from bot.services.cryptopay.requests import create_invoice
-from bot.utils.constants import PAYMENT_METHODS, CHANNEL_ADD_PRICE, CARD_NUBMER, OfferStatus, ChannelStatus, DEFAULT_CHANNEL_TOPPICS
+from bot.utils.constants import PAYMENT_METHODS, CHANNEL_ADD_PRICE, CARD_NUBMER, OfferStatus, ChannelStatus, DEFAULT_CHANNEL_TOPICS
 from configreader import config
 
 
@@ -60,7 +61,7 @@ async def get_payment_info(dialog_manager: DialogManager, repo: Repo, event_from
     }
 
 
-async def get_data_for_save(dialog_manager: DialogManager, repo: Repo, event_from_user: User, bot: Bot, **middleware_data):
+async def get_data_for_save(dialog_manager: DialogManager, repo: Repo, event_from_user: User, bot: Bot, state: FSMContext, **middleware_data):
     start_data = dialog_manager.start_data
     payment_for = start_data.get('payment_for')
     data = {
@@ -74,7 +75,7 @@ async def get_data_for_save(dialog_manager: DialogManager, repo: Repo, event_fro
         text_for_channel = (f"<b>📢 Нова заявка</b>\n\n"
                             f"<b>Користувач:</b> {user_info.full_name} @{user_info.username}\n"
                             f"<b>Канал:</b> {offer_model.channel_name}\n"
-                            f"<b>Тематика:</b> {DEFAULT_CHANNEL_TOPPICS.get(offer_model.channel_theme)}\n"
+                            f"<b>Тематика:</b> {DEFAULT_CHANNEL_TOPICS.get(offer_model.channel_theme)}\n"
                             )
         if offer_model.custom_channel_theme:
             text_for_channel += f"<b>Кастомна тематика:</b> {offer_model.custom_channel_theme}\n"
@@ -93,7 +94,7 @@ async def get_data_for_save(dialog_manager: DialogManager, repo: Repo, event_fro
         text_for_channel = (f'<b>📢Нова заявка</b>\n\n'
                             f'<b>Користувач:</b> {user_info.full_name} @{user_info.username}\n'
                             f'<b>Канал:</b> {channel_model.channel_title}\n'
-                            f'<b>Тематика:</b> {DEFAULT_CHANNEL_TOPPICS.get(channel_model.channel_theme)}\n')
+                            f'<b>Тематика:</b> {DEFAULT_CHANNEL_TOPICS.get(channel_model.channel_theme)}\n')
         if channel_model.custom_channel_theme:
             text_for_channel += f"<b>Кастомна тематика:</b> {channel_model.custom_channel_theme}\n"
         text_for_channel += (f"Посилання на канал: {channel_model.channel_invite_link}\n"
@@ -107,4 +108,5 @@ async def get_data_for_save(dialog_manager: DialogManager, repo: Repo, event_fro
         await bot.send_message(config.channels_channel_id, text_for_channel)
 
         await repo.channel_repo.update_channel(id_=dialog_manager.start_data['channel_id'], status=ChannelStatus.WAIT_CONFIRM_PAYMENT)
+    await state.clear()
     return data

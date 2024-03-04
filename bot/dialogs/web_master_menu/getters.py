@@ -7,8 +7,8 @@ from aiogram.utils.deep_linking import create_start_link
 from aiogram_dialog import DialogManager
 
 from bot.db import Repo
-from bot.utils.constants import categories_for_zaliv, traffic_sources_dict, RoleTypes, TrafficSource, WithdrawStatus, TargetSource, DEFAULT_CHANNEL_TOPPICS, OfferStatus, \
-    GamblingOfferStatus, target_sources_dict
+from bot.utils.constants import categories_for_zaliv, traffic_sources_dict, RoleTypes, TrafficSource, WithdrawStatus, TargetSource, DEFAULT_CHANNEL_TOPICS, OfferStatus, \
+    GamblingOfferStatus, target_sources_dict, traffic_sources_name_dict
 from bot.utils.misc import create_link_for_publish
 
 
@@ -81,13 +81,13 @@ async def get_target_sources(dialog_manager: DialogManager, repo: Repo, event_fr
     }
 
 
-async def get_offers(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
+async def get_webmaster_offers(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
     selected_target_source = dialog_manager.dialog_data.get('selected_target_source')
+    traffic_source = dialog_manager.dialog_data.get('selected_traffic_source')
     if selected_target_source == TargetSource.TG_CHANNEL.name:
-        traffic_source = dialog_manager.dialog_data.get('selected_traffic_source')
         offers_in_work_in_user = await repo.offer_repo.get_offer_in_work(user_id_web_master=event_from_user.id)
         offers_in_work_list = [offer.offer_id for offer in offers_in_work_in_user]
-        offers_model = await repo.offer_repo.get_offers_by_target_source_and_traffic_source(target_source=selected_target_source, traffic_source=traffic_source)
+        offers_model = await repo.offer_repo.get_offers(target_source=selected_target_source, traffic_source=traffic_source, status=OfferStatus.ACTIVE)
         offers_list = [
             (offer.id, f"{offer.channel_name} - {offer.target_request_amount}")
             for offer in offers_model if offer.id not in offers_in_work_list
@@ -98,15 +98,11 @@ async def get_offers(dialog_manager: DialogManager, repo: Repo, event_from_user:
             (offer.id, f"{offer.casino_name}")
             for offer in gambling_offers
         ]
-    # source = None
-    # for target_source in target_sources_dict.items():
-    #     if str(target_source) == str(selected_target_source):
-    #         source = target_sources_dict.get(target_source)
     return {
         'offers_list': offers_list,
-        'source': target_sources_dict.get(selected_target_source),
+        'source': traffic_sources_name_dict.get(traffic_source),
         'datetime_now': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
-        "offer_status": OfferStatus.COMPLETED
+        # "offer_status": OfferStatus.COMPLETED
     }
 
 
@@ -115,7 +111,7 @@ async def get_offer_info(dialog_manager: DialogManager, repo: Repo, event_from_u
     selected_target_source = dialog_manager.dialog_data.get('selected_target_source')
     if selected_target_source == TargetSource.TG_CHANNEL.name:
         offer_model = await repo.offer_repo.get_offers(offer_id=selected_offer_id)
-        offers_in_work = await repo.offer_repo.get_offer_in_work(selected_offer_id)
+        offers_in_work = await repo.offer_repo.get_offer_in_work(offer_id=selected_offer_id)
         sum_all_requests = sum([offer.current_reqeusts_amount for offer in offers_in_work])
         requests_amount_left = offer_model.target_request_amount - sum_all_requests
         return {
@@ -124,8 +120,8 @@ async def get_offer_info(dialog_manager: DialogManager, repo: Repo, event_from_u
             'offer_conditions': offer_model.traffic_rules,
             'price': offer_model.second_price_per_request,
             'target_amount': offer_model.target_request_amount,
-            'offer_topic': DEFAULT_CHANNEL_TOPPICS.get(offer_model.channel_theme) if offer_model.channel_theme != 'other'
-            else f"{DEFAULT_CHANNEL_TOPPICS.get(offer_model.channel_theme)}: {offer_model.custom_channel_theme}",
+            'offer_topic': DEFAULT_CHANNEL_TOPICS.get(offer_model.channel_theme) if offer_model.channel_theme != 'other'
+            else f"{DEFAULT_CHANNEL_TOPICS.get(offer_model.channel_theme)}: {offer_model.custom_channel_theme}",
             'personal_offers': 'personal_offers' in dialog_manager.start_data if dialog_manager.start_data else False,
             'selected_target_source': selected_target_source,
             'requests_amount_left': requests_amount_left
@@ -224,7 +220,7 @@ async def get_offer_info_in_user(dialog_manager: DialogManager, repo: Repo, even
         offer_model = await repo.offer_repo.get_offers(offer_id=selected_offer_id)
         offers_in_work_model = await repo.offer_repo.get_offer_in_work_in_web_master(offer_id=selected_offer_id, user_id_web_master=event_from_user.id)
         requests_amount = await repo.offer_repo.get_channel_invite_requests(invite_link=offers_in_work_model.channel_invite_link)
-        offers_in_work = await repo.offer_repo.get_offer_in_work(selected_offer_id)
+        offers_in_work = await repo.offer_repo.get_offer_in_work(offer_id=selected_offer_id)
         sum_all_requests = sum([offer.current_reqeusts_amount for offer in offers_in_work])
         requests_amount_left = offer_model.target_request_amount - sum_all_requests
 

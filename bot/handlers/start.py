@@ -1,5 +1,6 @@
 from aiogram import Router, Bot
 from aiogram.filters import CommandStart, CommandObject, Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram_dialog import DialogManager, StartMode
 from aiogram_i18n import I18nContext
@@ -19,11 +20,12 @@ router.message.middleware(ThrottlingMiddleware())
 
 
 @router.message(CommandStart())
-async def start(message: Message, command: CommandObject, i18n: I18nContext, dialog_manager: DialogManager, repo: Repo, bot: Bot):
+async def start(message: Message, command: CommandObject, i18n: I18nContext, dialog_manager: DialogManager, repo: Repo, bot: Bot, state: FSMContext):
+    await state.clear()
     user_model = await repo.user_repo.get_user(message.from_user.id)
     if not user_model or not user_model.role:
         refferer_id = command.args
-        await repo.user_repo.add_user(message.from_user.id, message.from_user.full_name, message.from_user.username, int(refferer_id) if refferer_id else None, )
+        await repo.user_repo.add_user(message.from_user.id, message.from_user.full_name, message.from_user.username, int(refferer_id) if refferer_id else None,)
         return await dialog_manager.start(FirstStartWindow.select_your_role, mode=StartMode.RESET_STACK, data={'first_init': True})
     menu_mapping = {
         RoleTypes.WEB_MASTER: WebMasterMainMenu.select_action,

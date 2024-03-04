@@ -33,6 +33,14 @@ categories_for_zaliv = {
     TargetSource.WEB_STORE.name: "Интернет-магазин"
 }
 
+traffic_sources_name_dict = {
+    TrafficSource.TIK_TOK.name: TrafficSource.TIK_TOK.value,
+    TrafficSource.REELS.name: TrafficSource.REELS.value,
+    TrafficSource.TG_CHANNEL.name: TrafficSource.TG_CHANNEL.value,
+    TrafficSource.TWITTER.name: TrafficSource.TWITTER.value,
+    TrafficSource.REDDIT.name: TrafficSource.REDDIT.value,
+}
+
 traffic_sources_dict = {
     TrafficSource.TIK_TOK: TrafficSource.TIK_TOK.value,
     TrafficSource.REELS: TrafficSource.REELS.value,
@@ -84,6 +92,8 @@ class OfferStatus(StrEnum):
     CANCELED = "canceled"
     COMPLETED = "completed"
     IN_WORK = "in_work"
+    BOT_HAVE_NO_RIGHTS = "bot_have_no_rights"
+    CLOSED = "closed"
 
 
 channels_status_named = {
@@ -110,7 +120,7 @@ class GamblingOfferStatus(StrEnum):
     NO_ACTIVE_LINK = "no_active_link"
 
 
-DEFAULT_CHANNEL_TOPPICS = {
+DEFAULT_CHANNEL_TOPICS = {
     'news': 'Новини',
     'cryptocurrency': 'Криптовалюта',
     'recruiting': 'Рекрутинг',
@@ -139,3 +149,8 @@ class TopUpStatus(StrEnum):
 casinos_dict = {
     '1': "Casino 1",
 }
+
+DEFER_NOTIFICATE_WEBMASTER_TIME = 72
+DEFER_CLOSE_OFFER_TIME = 96
+
+SUPPORT_URL = "https://t.me/TrafficPlace_partners"

@@ -2,10 +2,12 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button, Select
 from aiogram_i18n import I18nContext
+from arq import ArqRedis
 
 from . import states
 from ..selected_main import not_working_traffic_source, not_working_zaliv
 from ...db import Repo
+from ...services.scheduler.jobs import create_send_message_job, create_close_offer_job
 from ...utils.constants import TrafficSource, RoleTypes, TargetSource
 
 
@@ -29,7 +31,7 @@ async def on_select_target_source(call: CallbackQuery, widget: Select, dialog_ma
 
 
 async def on_select_traffic_source(call: CallbackQuery, widget: Select, dialog_manager: DialogManager, item_id: str):
-    if item_id in [TrafficSource.REDDIT, TrafficSource.TWITTER]:
+    if item_id in [TrafficSource.REDDIT.name, TrafficSource.TWITTER.name]:
         return await not_working_traffic_source(call, widget, dialog_manager)
     dialog_manager.dialog_data.update(selected_traffic_source=item_id)
     repo: Repo = dialog_manager.middleware_data['repo']
@@ -60,10 +62,13 @@ async def on_select_offer_my_offere(call: CallbackQuery, widget: Select, dialog_
 async def on_take_offer(call: CallbackQuery, widget: Button, dialog_manager: DialogManager):
     repo: Repo = dialog_manager.middleware_data['repo']
     i18n: I18nContext = dialog_manager.middleware_data['i18n']
+    arqredis: ArqRedis = dialog_manager.middleware_data['arqredis']
     if dialog_manager.dialog_data.get('selected_target_source') == TargetSource.GAMBLING.name:
         already_took_offers = await repo.offer_repo.get_gambling_offer_links(user_id=call.from_user.id)
         if already_took_offers:
             return await call.answer(i18n.get('u_already_took_gambling_offer'), show_alert=True)
+    await create_send_message_job(arqredis, dialog_manager.dialog_data.get('selected_offer_id'), call.from_user.id)
+    await create_close_offer_job(arqredis, dialog_manager.dialog_data.get('selected_offer_id'), call.from_user.id)
     await dialog_manager.switch_to(states.SelectWebMasterOffer.took_offer_action)
 
 

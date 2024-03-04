@@ -1,6 +1,6 @@
 import operator
 
-from aiogram_dialog.widgets.kbd import Group, Start, Button, ScrollingGroup, Select, WebApp
+from aiogram_dialog.widgets.kbd import Group, Start, Button, ScrollingGroup, Select, WebApp, Url
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.utils.i18n_utils.i18n_format import I18NFormat
@@ -8,7 +8,7 @@ from . import selected
 from . import states
 from ..channel_admin_menu.states import ChannelAdminMainMenu
 from ..web_master_menu.states import MainMenu
-from ...utils.constants import WebAppUrls
+from ...utils.constants import WebAppUrls, SUPPORT_URL
 
 
 def select_action():
@@ -56,9 +56,10 @@ def personal_cabinet_kb():
             on_click=selected.on_select_webmaster,
             state=MainMenu.select_action
         ),
-        Button(
-            I18NFormat("I_support"),
-            id='I_support',
+        Url(
+            I18NFormat('I_support'),
+            Const(SUPPORT_URL)
+
         ),
         width=2
 

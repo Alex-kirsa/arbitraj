@@ -43,7 +43,7 @@ def confirm_payment_window():
 
 def data_save_window():
     return Window(
-        I18NFormat('T_data_saved'),
+        I18NFormat('request_accepted'),
         Start(I18NFormat('main_menu'), id='to_main_menu',
               state=channel_admin_states.ChannelAdminMainMenu.select_action, mode=StartMode.RESET_STACK,
               when=F['payment_for'] == 'offer_purchase'),

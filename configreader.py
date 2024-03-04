@@ -44,7 +44,6 @@ class Config(BaseSettings):
     devs: list
     admins: list
 
-
     # DB
     postgredsn: PostgresDsn
 

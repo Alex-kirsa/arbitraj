@@ -1,4 +1,4 @@
-from sqlalchemy import select, update, and_
+from sqlalchemy import select, update, and_, or_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,9 +20,10 @@ class OfferRequestsRepo:
     async def get_offers(self, offer_id: int = None,
                          user_id: int = None,
                          target_source: str = None,
-                         source_traffic: str = None,
+                         traffic_source: str = None,
                          channel_theme: str = None,
                          status: OfferStatus | list[OfferStatus] = None,
+                         channel_id: int = None
                          ):
         filters = []
 
@@ -33,10 +34,12 @@ class OfferRequestsRepo:
 
         if user_id:
             filters.append(Offers.user_id == user_id)
+        if channel_id:
+            filters.append(Offers.channel_id == channel_id)
         if target_source:
             filters.append(Offers.target_source == target_source)
-        if source_traffic:
-            filters.append(Offers.traffic_source == source_traffic)
+        if traffic_source:
+            filters.append(Offers.traffic_source == traffic_source)
         if channel_theme:
             filters.append(Offers.channel_theme == channel_theme)
         if status:
@@ -60,23 +63,25 @@ class OfferRequestsRepo:
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def update_offer(self, offer_id: int, **kwargs):
+    async def update_offer(self, offer_id: int, commit=True, **kwargs):
         query = update(Offers).where(
             Offers.id == offer_id
         ).values(
             **kwargs
         )
         await self.session.execute(query)
-        await self.session.commit()
+        if commit:
+            await self.session.commit()
 
-    async def update_offer_in_work(self, id_: int, **kwargs):
+    async def update_offer_in_work(self, id_: int, commit=True, **kwargs):
         query = update(OffersInWork).where(
             OffersInWork.id == id_,
         ).values(
             **kwargs
         )
         await self.session.execute(query)
-        await self.session.commit()
+        if commit:
+            await self.session.commit()
 
     async def add_offer_in_work(self, offer_id: int, user_id_web_master: int,
                                 channel_invite_link: str, redirect_link: str,
@@ -95,44 +100,30 @@ class OfferRequestsRepo:
                                 channel_invite_link: str = None, redirect_link: str = None,
                                 status: str = None, id_: int = None):
         query = select(OffersInWork)
-        if all([offer_id, user_id_web_master, channel_invite_link, redirect_link, status]):
-            query = select(OffersInWork).where(
-                OffersInWork.offer_id == offer_id,
-                OffersInWork.user_id_web_master == user_id_web_master,
-                OffersInWork.channel_invite_link == channel_invite_link,
-                OffersInWork.redirect_link == redirect_link,
-                OffersInWork.status == status
-            )
-        elif offer_id:
-            query = select(OffersInWork).where(
-                OffersInWork.offer_id == offer_id
-            )
-        elif user_id_web_master:
-            query = select(OffersInWork).where(
-                OffersInWork.user_id_web_master == user_id_web_master
-            )
-        elif channel_invite_link:
-            query = select(OffersInWork).where(
-                OffersInWork.channel_invite_link == channel_invite_link
-            )
+
+        if any([channel_invite_link, redirect_link, id_]):
+            conditions = []
+            if channel_invite_link:
+                conditions.append(OffersInWork.channel_invite_link == channel_invite_link)
+            if redirect_link:
+                conditions.append(OffersInWork.redirect_link == redirect_link)
+            if id_:
+                conditions.append(OffersInWork.id == id_)
+
+            query = select(OffersInWork).where(or_(*conditions))
             result = await self.session.execute(query)
             return result.scalars().first()
-        elif redirect_link:
-            query = select(OffersInWork).where(
-                OffersInWork.redirect_link == redirect_link
-            )
-            result = await self.session.execute(query)
-            return result.scalars().first()
-        elif status:
-            query = select(OffersInWork).where(
-                OffersInWork.status == status
-            )
-        elif id_:
-            query = select(OffersInWork).where(
-                OffersInWork.id == id_
-            )
-            result = await self.session.execute(query)
-            return result.scalars().first()
+
+        filters = []
+        if offer_id:
+            filters.append(OffersInWork.offer_id == offer_id)
+        if user_id_web_master:
+            filters.append(OffersInWork.user_id_web_master == user_id_web_master)
+        if status:
+            filters.append(OffersInWork.status == status)
+
+        if filters:
+            query = select(OffersInWork).where(and_(*filters))
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -147,7 +138,7 @@ class OfferRequestsRepo:
         result = await self.session.execute(query)
         return result.scalars().first()
 
-    async def add_channel_invite_request(self, user_id: int, channel_id: int, invite_link: str, offer_id: int):
+    async def add_channel_invite_request(self, user_id: int, channel_id: int, invite_link: str, offer_id: int, commit=True):
         query = insert(ChannelInviteRequests).values(
             user_id=user_id,
             channel_id=channel_id,
@@ -155,7 +146,8 @@ class OfferRequestsRepo:
             offer_id=offer_id
         ).on_conflict_do_nothing()
         await self.session.execute(query)
-        await self.session.commit()
+        if commit:
+            await self.session.commit()
 
     async def get_channel_invite_requests(self, user_id: int = None, channel_id: int = None, invite_link: str | list = None, offer_id: int = None):
         if all([user_id, channel_id, invite_link, offer_id]):

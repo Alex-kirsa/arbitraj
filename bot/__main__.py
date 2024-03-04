@@ -12,6 +12,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiogram_dialog import setup_dialogs
 from aiogram_i18n.cores.fluent_runtime_core import FluentRuntimeCore
 from aiohttp import web
+from arq import create_pool
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
@@ -22,7 +23,7 @@ from bot.handlers.other_handlers import handle_cryptopay_updates, handle_create_
 # from bot.db.requests import channel_requests
 from bot.middlewares.i18n_dialog import RedisI18nMiddleware
 from bot.utils.set_bot_commands import set_default_commands
-from configreader import config
+from configreader import config, RedisConfig
 # from .dialogs import include_dialogs
 # from .handlers import include_handlers_routers
 from .middlewares.db import DbSessionMiddleware
@@ -84,8 +85,8 @@ async def main():
     await set_default_commands(bot)
 
     # Имплементируем планировщик задач
-    # redis_pool = await create_pool(RedisConfig.pool_settings)
-    # dp["arqredis"] = redis_pool
+    redis_pool = await create_pool(RedisConfig.pool_settings)
+    dp["arqredis"] = redis_pool
     crypto_bot_client = AioCryptoPay(token=config.crypto_api_key, network=Networks.TEST_NET)
     dp["crypto_bot_client"] = crypto_bot_client
     app = web.Application(logger=logger)

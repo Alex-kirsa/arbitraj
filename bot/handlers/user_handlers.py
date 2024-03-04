@@ -5,7 +5,7 @@ from aiogram_i18n import I18nContext
 
 from bot.db import Repo
 from bot.dialogs.purchase_menu.states import TopUpOperations
-from bot.filters.bot_reg_filters import AddBotOnCreateOffer
+from bot.filters.bot_reg_filters import AddBotOnCreateOffer, DelBotFilter
 from bot.utils.constants import OfferStatus
 from bot.utils.misc import check_enough_rights
 
@@ -26,6 +26,7 @@ async def add_bot_handler(
     chat_id = update.chat.id
     chat_title = update.chat.title
     await i18n.set_locale("uk")
+    print(111)
     channel_model = await repo.channel_repo.get_channel_for_traffic(chat_id)
     state = dp.fsm.get_context(bot=bot, user_id=inviter_id, chat_id=inviter_id)
     if channel_model:
@@ -75,3 +76,21 @@ async def add_bot_handler(
                 data=data
             )
             # await dp.fsm.get_context(bot, inviter_id, inviter_id).clear()
+
+
+@router.my_chat_member(DelBotFilter())
+async def del_bot_from_channel(
+        update: ChatMemberUpdated,
+        repo: Repo,
+        bot: Bot,
+        i18n: I18nContext,
+):
+    inviter_id = update.from_user.id
+    bot_rights = update.new_chat_member
+    chat_id = update.chat.id
+    chat_title = update.chat.title
+    await i18n.set_locale("uk")
+    offers_in_channel = await repo.offer_repo.get_offers(channel_id=chat_id, status=[OfferStatus.IN_WORK, OfferStatus.ACTIVE])
+    if offers_in_channel and not await check_enough_rights(bot_rights):
+        await repo.offer_repo.update_offer(offers_in_channel.id, status=OfferStatus.BOT_HAVE_NO_RIGHTS)
+        return await bot.send_message(update.from_user.id, i18n.get("bot_was_deleted_from_channel", channel_name=update.chat.title))

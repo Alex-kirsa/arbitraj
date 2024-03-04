@@ -12,7 +12,7 @@ from ..channel_owner_menu.keyboards import channel_theme_kb, get_channels_kb
 from ..channel_owner_menu.states import ChannelOwnerMainMenu
 from ..web_master_menu.keyboards import select_offer, select_target_source, select_traffic_source
 from ..web_master_menu.states import MainMenu
-from ...utils.constants import WebAppUrls, OfferStatus
+from ...utils.constants import WebAppUrls, OfferStatus, SUPPORT_URL
 
 
 def main_menu_window():
@@ -43,11 +43,10 @@ def personal_cabinet_window():
                 id='I_webmaster',
                 on_click=selected.on_select_webmaster,
                 state=MainMenu.select_action
-
             ),
-            Button(
-                I18NFormat("I_support"),
-                id='I_support',
+            Url(
+                I18NFormat('I_support'),
+                Const(SUPPORT_URL)
             ),
             width=2
         ),
@@ -67,7 +66,6 @@ def select_offer_window():
             },
             selector='offer_status'
         ),
-        # I18NFormat('I_all_active_offers'),
         select_offer(selected.on_select_offer),
         Cancel(I18NFormat('I_back')),
         state=states.AdminOffers.select_offer,
@@ -132,7 +130,6 @@ def enter_offer_data_window():
         WebApp(I18NFormat("I_enter_offer_data"), Const(WebAppUrls.CREATE_OFFER_WEB_APP.value)),
         Back(I18NFormat('I_back')),
         state=states.CreateOffer.enter_offer_data,
-        # getter=getters.get_entered_offer_data
     )
 
 

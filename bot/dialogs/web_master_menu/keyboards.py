@@ -1,10 +1,10 @@
 import operator
 
-from aiogram_dialog.widgets.kbd import Group, Button, Select, ScrollingGroup, Start
-from aiogram_dialog.widgets.text import Format, Multi
+from aiogram_dialog.widgets.kbd import Group, Button, Select, ScrollingGroup, Start, Url
+from aiogram_dialog.widgets.text import Format, Multi, Const
 from magic_filter import F
 
-from bot.utils.constants import RoleTypes
+from bot.utils.constants import RoleTypes, SUPPORT_URL
 from bot.utils.i18n_utils.i18n_format import I18NFormat
 from . import states, selected
 
@@ -58,10 +58,9 @@ def personal_cabinet_menu():
             state=states.ReferalSystem.show_referal_menu
 
         ),
-        Button(
+        Url(
             I18NFormat('I_support'),
-            id='I_support',
-            on_click=None,
+            Const(SUPPORT_URL)
         ),
 
         width=2

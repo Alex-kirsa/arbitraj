@@ -4,7 +4,7 @@ from aiogram_dialog import DialogManager
 from aiogram_i18n import I18nContext
 
 from bot.db import Repo
-from bot.utils.constants import traffic_sources_dict, target_sources_dict, OfferStatus, DEFAULT_CHANNEL_TOPPICS, ChannelStatus
+from bot.utils.constants import traffic_sources_dict, target_sources_dict, OfferStatus, DEFAULT_CHANNEL_TOPICS, ChannelStatus
 
 
 async def get_main_menu_data(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
@@ -15,7 +15,7 @@ async def get_main_menu_data(dialog_manager: DialogManager, repo: Repo, event_fr
 
 async def get_admin_offers(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
 
-    admin_offers = await repo.offer_repo.get_offers(status=dialog_manager.start_data['selected_offer_status'], user_id=event_from_user.id)
+    admin_offers = await repo.offer_repo.get_offers(user_id=event_from_user.id, status=dialog_manager.start_data['selected_offer_status'])
 
     return {
         "offers_list": [
@@ -34,7 +34,7 @@ async def get_offer_info(dialog_manager: DialogManager, repo: Repo, event_from_u
         'offer_conditions': offer_info.traffic_rules,
         'price': offer_info.first_price_per_request,
         'target_amount': offer_info.target_request_amount,
-        'offer_topic': DEFAULT_CHANNEL_TOPPICS.get(offer_info.channel_theme),
+        'offer_topic': DEFAULT_CHANNEL_TOPICS.get(offer_info.channel_theme),
         'first_window': True if not dialog_manager.start_data.get('selected_offer_status') else False
     }
 
@@ -116,7 +116,7 @@ async def get_channels_with_criteria(dialog_manager: DialogManager, repo: Repo, 
             (channel.id, f"{channel.channel_title} - {channel.subs_amount} підпис.") for channel in channels_model
         ],
         'sort_criteria': sort_criteria,
-        'category': DEFAULT_CHANNEL_TOPPICS.get(dialog_manager.dialog_data.get('selected_channel_theme'))
+        'category': DEFAULT_CHANNEL_TOPICS.get(dialog_manager.dialog_data.get('selected_channel_theme'))
     }
 
 
@@ -131,12 +131,12 @@ async def get_personal_cabinet_data(dialog_manager: DialogManager, repo: Repo, i
 
 
 async def get_offers_with_theme(dialog_manager: DialogManager, repo: Repo, **middleware_data):
-    channels_model = await repo.offer_repo.get_offers(channel_theme=dialog_manager.dialog_data.get('selected_channel_theme'), )
+    channels_model = await repo.offer_repo.get_offers(channel_theme=dialog_manager.dialog_data.get('selected_channel_theme'))
     return {
         'offers': [
             (channel.id, f"{channel.channel_name} - {channel.target_request_amount}") for channel in channels_model
         ] if channels_model else [],
-        'category': DEFAULT_CHANNEL_TOPPICS.get(dialog_manager.dialog_data.get('selected_channel_theme'))
+        'category': DEFAULT_CHANNEL_TOPICS.get(dialog_manager.dialog_data.get('selected_channel_theme'))
     }
 
 

@@ -52,7 +52,7 @@ class UserRequestsRepo:
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def sum_user_balance(self, user_id: int, balance: int = None, earned: int = None, earned_from_referals: int = None):
+    async def sum_user_balance(self, user_id: int, balance: int = None, earned: int = None, earned_from_referals: int = None, commit=True):
         if balance:
             query = update(Users).where(
                 Users.user_id == user_id
@@ -74,7 +74,8 @@ class UserRequestsRepo:
                 earned_from_referals=Users.earned_from_referals + earned_from_referals
             )
             await self.session.execute(query)
-        await self.session.commit()
+        if commit:
+            await self.session.commit()
 
     async def minus_user_balance(self, user_id: int, balance: int = None, earned: int = None, earned_from_referals: int = None):
         if balance:

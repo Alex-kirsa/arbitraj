@@ -11,6 +11,7 @@ from ..purchase_menu.states import TopUpOperations
 from ..selected_main import not_working_zaliv
 from ...db import Repo
 from ...services.google_sheets_service.google_sheets_service import write_to_google_sheets
+from ...services.notification import notificate_web_masters_new_offer
 from ...utils.constants import TargetSource, OfferStatus, ChannelStatus, WithdrawStatus, RoleTypes, casinos_dict, GamblingOfferStatus
 
 
@@ -36,7 +37,9 @@ async def on_enter_second_price_per_request(message: Message, widget: ManagedTex
     await repo.offer_repo.update_offer(request_id, status=OfferStatus.ACTIVE.value, second_price_per_request=int(message.text))
     await repo.channel_repo.update_channel_for_traffic_status(offer_model.channel_id, status=OfferStatus.ACTIVE.value)
     await message.answer("Заявка принята", show_alert=True)
-    await bot.send_message(offer_model.user_id, i18n.get('yout_offer_is_active', offer_name=offer_model.channel_name))
+    await bot.send_message(offer_model.user_id, i18n.get('your_offer_succ_placed_on_platform', offer_name=offer_model.channel_name))
+    all_web_masters = await repo.user_repo.get_users(role=RoleTypes.WEB_MASTER)
+    await notificate_web_masters_new_offer(all_web_masters, bot, i18n, offer_model)
     await manager.switch_to(states.Requests.select_request)
 
 
