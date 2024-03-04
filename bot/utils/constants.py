@@ -153,4 +153,4 @@ casinos_dict = {
 DEFER_NOTIFICATE_WEBMASTER_TIME = 72
 DEFER_CLOSE_OFFER_TIME = 96
 
-SUPPORT_URL = "https://t.me/TrafficPlace_partners"
+SUPPORT_URL = "https://trafficplace_partners.t.me/"

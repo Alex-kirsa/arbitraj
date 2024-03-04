@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 
 from aiocryptopay import AioCryptoPay
 from aiogram import Dispatcher, Bot
@@ -86,7 +87,8 @@ async def get_data_for_save(dialog_manager: DialogManager, repo: Repo, event_fro
                              f"Вимоги до трафіку: {offer_model.traffic_rules}\n"
                              f"Коментар: {offer_model.comment}\n"
                              f"Контакт: {offer_model.contacts}\n")
-        await bot.send_message(config.offers_channel_id, text_for_channel)
+        with suppress(Exception):
+            await bot.send_message(config.offers_channel_id, text_for_channel)
         await repo.channel_repo.update_channel_for_traffic_status(channel_id=offer_model.channel_id, status=ChannelStatus.WAIT_CONFIRM_PAYMENT)
     elif dialog_manager.start_data['payment_for'] == 'channel_purchase':
         channel_model = await repo.channel_repo.get_channel(dialog_manager.start_data['channel_id'])
@@ -105,7 +107,8 @@ async def get_data_for_save(dialog_manager: DialogManager, repo: Repo, event_fro
                              f"Мінімальна вартість реклами: {channel_model.minimal_ad_price}\n"
                              f"Коментарій: {channel_model.comment}\n"
                              f"Контакти: {channel_model.contacts}\n")
-        await bot.send_message(config.channels_channel_id, text_for_channel)
+        with suppress(Exception):
+            await bot.send_message(config.channels_channel_id, text_for_channel)
 
         await repo.channel_repo.update_channel(id_=dialog_manager.start_data['channel_id'], status=ChannelStatus.WAIT_CONFIRM_PAYMENT)
     await state.clear()

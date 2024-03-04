@@ -1,3 +1,4 @@
+import logging
 from contextlib import suppress
 
 from aiogram import Bot
@@ -29,9 +30,10 @@ async def notificate_web_masters_new_offer(webmasters: list[Users], bot: Bot, i1
                        f"Коментар: {offer_model.comment}\n"
                        f"Контакт: {offer_model.contacts}\n")
 
-        with suppress(Exception):
+        try:
             await bot.send_message(web_master.user_id, i18n.get('new_offer_noty', offer_info=offer_info))
-
+        except Exception as e:
+            logging.info(f'Error while sending message to {web_master.user_id}: {e}')
 
 async def notificate_web_master_offer_done(webmasters: list[Users], bot: Bot, i18n: I18nContext, offer_model: Offers):
     text = f'Оффер "{offer_model.channel_name}"  виконано". Перейдіть в Особисті кабінети та оберіть доступні оффери'

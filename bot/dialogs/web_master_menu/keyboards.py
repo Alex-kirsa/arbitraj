@@ -60,7 +60,8 @@ def personal_cabinet_menu():
         ),
         Url(
             I18NFormat('I_support'),
-            Const(SUPPORT_URL)
+            id='aboba',
+            url=Const(SUPPORT_URL)  # SUPPORT_URL = "https://t.me/TrafficPlace_partners"
         ),
 
         width=2
@@ -97,7 +98,7 @@ def select_offer(on_click):
     return ScrollingGroup(
         Select(
             Multi(
-                Format("{item[1]}") #when=F['offer_status'] == OfferStatus.ACTIVE.value),
+                Format("{item[1]}")  # when=F['offer_status'] == OfferStatus.ACTIVE.value),
                 # Format("{item[1]} - {item[2]}", when=F['offer_status'] == OfferStatus.COMPLETED.value)
             ),
             id='offers_kb',

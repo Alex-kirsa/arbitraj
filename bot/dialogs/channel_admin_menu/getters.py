@@ -74,7 +74,7 @@ async def get_target_sources(dialog_manager: DialogManager, repo: Repo, event_fr
 async def get_entered_offer_data(dialog_manager: DialogManager, repo: Repo, event_from_user: User, **middleware_data):
     dialog_data = dialog_manager.dialog_data
     text = (f"Назва каналу: {dialog_data['channel_title']}\n"
-            f"Тематика каналу: {dialog_data['channel_theme']}\n"
+            f"Тематика каналу: {DEFAULT_CHANNEL_TOPICS.get(dialog_data['channel_theme'])}\n"
             f"Необхідна кількість заявок: {dialog_data['amount_requests']}\n"
             f"Терміни виконання: {dialog_data['deadline']}\n"
             f"Ціна за заявку: {dialog_data['price_per_request']}\n"
